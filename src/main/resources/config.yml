@@ -1,120 +1,146 @@
+settings:
+  minPlayers: 4
+  beginCountdownSeconds: 5
+  endGameLobbyCountdownSeconds: 5
+  endGameSpectatorDelayTicks: 40
+  arenaResetDelayTicks: 160
+  borderShrinkSeconds: 300
+  borderMinSize: 1
+  lobbyWorldName: "world"
+  witherCountdownSeconds: 5
+  witherEffectDurationTicks: 40
+  witherEffectPeriodTicks: 40
+  witherEffectAmplifier: 1
+  itemRarity:
+    legendaryPercent: 5
+    rarePercent: 15
+
 arenas:
-  # ------------------ 12 игроков ------------------
-  arena12_1:
-    world: "arena12_1"
-    maxPlayers: 12
+  # ------------------ 4 игрока ------------------
+  arena4_1:
+    worldName: "arena4_1"
     spawnPoints:
-      - [0, 65, 0]
-      - [2, 65, 0]
-      - [4, 65, 0]
-      - [6, 65, 0]
-      - [8, 65, 0]
-      - [10, 65, 0]
-      - [0, 65, 2]
-      - [2, 65, 2]
-      - [4, 65, 2]
-      - [6, 65, 2]
-      - [8, 65, 2]
-      - [10, 65, 2]
+      - [-6, 100, -6]
+      - [-6, 100, 6]
+      - [6, 100, -6]
+      - [6, 100, 6]
+    displayName: "Arena 4 #1"
+    itemCooldownSeconds: 5
 
-  arena12_2:
-    world: "arena12_2"
-    maxPlayers: 12
+  arena4_2:
+    worldName: "arena4_2"
     spawnPoints:
-      - [0, 65, 0]
-      - [2, 65, 0]
-      - [4, 65, 0]
-      - [6, 65, 0]
-      - [8, 65, 0]
-      - [10, 65, 0]
-      - [0, 65, 2]
-      - [2, 65, 2]
-      - [4, 65, 2]
-      - [6, 65, 2]
-      - [8, 65, 2]
-      - [10, 65, 2]
+      - [-6, 100, 0]
+      - [6, 100, 0]
+      - [0, 100, -6]
+      - [0, 100, 6]
+    displayName: "Arena 4 #2"
+    itemCooldownSeconds: 5
 
-  arena12_3:
-    world: "arena12_3"
-    maxPlayers: 12
+  arena4_3:
+    worldName: "arena4_3"
     spawnPoints:
-      - [0, 65, 0]
-      - [2, 65, 0]
-      - [4, 65, 0]
-      - [6, 65, 0]
-      - [8, 65, 0]
-      - [10, 65, 0]
-      - [0, 65, 2]
-      - [2, 65, 2]
-      - [4, 65, 2]
-      - [6, 65, 2]
-      - [8, 65, 2]
-      - [10, 65, 2]
+      - [-6, 100, -6]
+      - [6, 100, -6]
+      - [-6, 100, 6]
+      - [6, 100, 6]
+    displayName: "Arena 4 #3"
+    itemCooldownSeconds: 5
 
   # ------------------ 8 игроков ------------------
   arena8_1:
-    world: "arena8_1"
-    maxPlayers: 8
+    worldName: "arena8_1"
     spawnPoints:
-      - [0, 65, 0]
-      - [2, 65, 0]
-      - [4, 65, 0]
-      - [6, 65, 0]
-      - [0, 65, 2]
-      - [2, 65, 2]
-      - [4, 65, 2]
-      - [6, 65, 2]
+      - [14, 100, 0]
+      - [9.9, 100, 9.9]
+      - [0, 100, 14]
+      - [-9.9, 100, 9.9]
+      - [-14, 100, 0]
+      - [-9.9, 100, -9.9]
+      - [0, 100, -14]
+      - [9.9, 100, -9.9]
+    displayName: "Arena 8 #1"
+    itemCooldownSeconds: 2
 
   arena8_2:
-    world: "arena8_2"
-    maxPlayers: 8
+    worldName: "arena8_2"
     spawnPoints:
-      - [0, 65, 0]
-      - [2, 65, 0]
-      - [4, 65, 0]
-      - [6, 65, 0]
-      - [0, 65, 2]
-      - [2, 65, 2]
-      - [4, 65, 2]
-      - [6, 65, 2]
+      - [14, 100, 0]
+      - [0, 100, 14]
+      - [-14, 100, 0]
+      - [0, 100, -14]
+      - [9.9, 100, 9.9]
+      - [-9.9, 100, 9.9]
+      - [-9.9, 100, -9.9]
+      - [9.9, 100, -9.9]
+    displayName: "Arena 8 #2"
+    itemCooldownSeconds: 2
 
   arena8_3:
-    world: "arena8_3"
-    maxPlayers: 8
+    worldName: "arena8_3"
     spawnPoints:
-      - [0, 65, 0]
-      - [2, 65, 0]
-      - [4, 65, 0]
-      - [6, 65, 0]
-      - [0, 65, 2]
-      - [2, 65, 2]
-      - [4, 65, 2]
-      - [6, 65, 2]
+      - [14, 100, 0]
+      - [0, 100, 14]
+      - [-14, 100, 0]
+      - [0, 100, -14]
+      - [9.9, 100, -9.9]
+      - [9.9, 100, 9.9]
+      - [-9.9, 100, 9.9]
+      - [-9.9, 100, -9.9]
+    displayName: "Arena 8 #3"
+    itemCooldownSeconds: 2
 
-  # ------------------ 4 игрока ------------------
-  arena4_1:
-    world: "arena4_1"
-    maxPlayers: 4
+  # ------------------ 12 игроков ------------------
+  arena12_1:
+    worldName: "arena12_1"
     spawnPoints:
-      - [0, 65, 0]
-      - [2, 65, 0]
-      - [0, 65, 2]
-      - [2, 65, 2]
+      - [18.0, 100, 0.0]
+      - [15.59, 100, 9.0]
+      - [9.0, 100, 15.59]
+      - [0.0, 100, 18.0]
+      - [-9.0, 100, 15.59]
+      - [-15.59, 100, 9.0]
+      - [-18.0, 100, 0.0]
+      - [-15.59, 100, -9.0]
+      - [-9.0, 100, -15.59]
+      - [0.0, 100, -18.0]
+      - [9.0, 100, -15.59]
+      - [15.59, 100, -9.0]
+    displayName: "Arena 12 #1"
+    itemCooldownSeconds: 2
 
-  arena4_2:
-    world: "arena4_2"
-    maxPlayers: 4
+  arena12_2:
+    worldName: "arena12_2"
     spawnPoints:
-      - [0, 65, 0]
-      - [2, 65, 0]
-      - [0, 65, 2]
-      - [2, 65, 2]
+      - [18.0, 100, 0.0]
+      - [15.59, 100, 9.0]
+      - [9.0, 100, 15.59]
+      - [0.0, 100, 18.0]
+      - [-9.0, 100, 15.59]
+      - [-15.59, 100, 9.0]
+      - [-18.0, 100, 0.0]
+      - [-15.59, 100, -9.0]
+      - [-9.0, 100, -15.59]
+      - [0.0, 100, -18.0]
+      - [9.0, 100, -15.59]
+      - [15.59, 100, -9.0]
+    displayName: "Arena 12 #2"
+    itemCooldownSeconds: 2
 
-  arena4_3:
-    world: "arena4_3"
-    maxPlayers: 4
+  arena12_3:
+    worldName: "arena12_3"
     spawnPoints:
-      - [0, 65, 0]
-      - [2, 65, 0]
-      - [0, 65, 2]
-      - [2, 65, 2]
+      - [18.0, 100, 0.0]
+      - [15.59, 100, 9.0]
+      - [9.0, 100, 15.59]
+      - [0.0, 100, 18.0]
+      - [-9.0, 100, 15.59]
+      - [-15.59, 100, 9.0]
+      - [-18.0, 100, 0.0]
+      - [-15.59, 100, -9.0]
+      - [-9.0, 100, -15.59]
+      - [0.0, 100, -18.0]
+      - [9.0, 100, -15.59]
+      - [15.59, 100, -9.0]
+    displayName: "Arena 12 #3"
+    itemCooldownSeconds: 2

@@ -12,15 +12,16 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.example.pillars.GameSession;
 import org.example.pillars.PillarsPlugin;
 import org.example.pillars.enums.GameState;
+import org.example.pillars.managers.GameSessionManager;
 
 import java.util.UUID;
 
-public class SessionPlayerListener implements Listener {
+public class GameSessionPlayerListener implements Listener {
 
-    private final PillarsPlugin pillarsPlugin;
+    private final GameSessionManager gameSessionManager;
 
-    public SessionPlayerListener(PillarsPlugin pillarsPlugin) {
-        this.pillarsPlugin = pillarsPlugin;
+    public GameSessionPlayerListener(GameSessionManager gameSessionManager) {
+        this.gameSessionManager = gameSessionManager;
     }
 
     @EventHandler
@@ -29,7 +30,7 @@ public class SessionPlayerListener implements Listener {
         Player player = event.getPlayer();
 
         GameSession session =
-                pillarsPlugin.getSessionManager().getSessionByPlayer(player);
+                gameSessionManager.getSessionByPlayer(player);
 
         if (session != null) {
             session.playerDisconnect(player);
@@ -42,7 +43,7 @@ public class SessionPlayerListener implements Listener {
         if (!(event.getEntity() instanceof Player player)) return;
 
         GameSession session =
-                pillarsPlugin.getSessionManager().getSessionByPlayer(player);
+                gameSessionManager.getSessionByPlayer(player);
 
         if (session == null) return;
         if (session.getState() != GameState.RUNNING) return;
@@ -92,7 +93,7 @@ public class SessionPlayerListener implements Listener {
         Player player = event.getPlayer();
 
         GameSession session =
-                pillarsPlugin.getSessionManager().getSessionByPlayer(player);
+                gameSessionManager.getSessionByPlayer(player);
 
         if (session == null) return;
 
@@ -134,7 +135,7 @@ public class SessionPlayerListener implements Listener {
         if (!(event.getDamager() instanceof Player damager)) return;
 
         GameSession session =
-                pillarsPlugin.getSessionManager().getSessionByPlayer(victim);
+                gameSessionManager.getSessionByPlayer(victim);
 
         if (session == null) return;
         if (session.getState() != GameState.RUNNING) return;

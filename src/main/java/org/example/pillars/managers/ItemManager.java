@@ -3,6 +3,7 @@ package org.example.pillars.managers;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.example.pillars.items.CommonItems;
 import org.example.pillars.items.LegendaryItems;
 import org.example.pillars.items.RareItems;
@@ -12,15 +13,22 @@ import java.util.Random;
 
 public class ItemManager {
     private final Random random = new Random();
+    private final int legendaryPercent;
+    private final int rarePercent;
+
+    public ItemManager(JavaPlugin plugin) {
+        this.legendaryPercent = Math.max(0, Math.min(100, plugin.getConfig().getInt("settings.itemRarity.legendaryPercent", 5)));
+        this.rarePercent = Math.max(0, Math.min(100 - legendaryPercent, plugin.getConfig().getInt("settings.itemRarity.rarePercent", 15)));
+    }
 
     public ItemStack getRandomItem() {
         int roll = random.nextInt(100) + 1; // 1-100
 
-        if (roll <= 5) { // 5% chance
+        if (roll <= legendaryPercent) {
             return getRandomFromMap(LegendaryItems.ITEMS);
-        } else if (roll <= 20) { // next 15% chance
+        } else if (roll <= legendaryPercent + rarePercent) {
             return getRandomFromMap(RareItems.ITEMS);
-        } else { // remaining 80% common
+        } else {
             return getRandomFromMap(CommonItems.ITEMS);
         }
     }

@@ -6,11 +6,21 @@ import org.bukkit.entity.Player;
 
 public class TeleportManager {
     public void teleportToSpawnPoint(Player player, Location spawn) {
-        player.teleport(spawn.clone().add(0.5, 1, 0.5));
+        player.teleport(spawn);
     }
 
     public void teleportToLobby(Player player) {
-        player.teleport(Bukkit.getWorld("world").getSpawnLocation());
+        teleportToLobby(player, "world");
+    }
+
+    public boolean teleportToLobby(Player player, String worldName) {
+        org.bukkit.World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            return false;
+        }
+
+        player.teleport(world.getSpawnLocation());
+        return true;
     }
 
 }

@@ -34,6 +34,12 @@ public class ArenaManager {
 
         File configFile = new File(plugin.getDataFolder(), "config.yml");
         if (!configFile.exists()) {
+            plugin.getLogger().severe("config.yml not found. No arenas loaded.");
+            return;
+        }
+
+        if (!templateWorld.exists() || !templateWorld.isDirectory()) {
+            plugin.getLogger().severe("Arena template world not found: " + templateWorld.getAbsolutePath());
             return;
         }
 
@@ -58,8 +64,8 @@ public class ArenaManager {
                     new File(arenaFolder, "session.lock").delete();
 
                     plugin.getLogger().info("Created arena world: " + worldName);
-                } catch (IOException e) {
-                    plugin.getLogger().severe("Failed to copy arena template for " + worldName);
+                } catch (IOException | RuntimeException e) {
+                    plugin.getLogger().severe("Failed to copy arena template for " + worldName + ": " + e.getMessage());
                     continue;
                 }
             }
@@ -89,12 +95,20 @@ public class ArenaManager {
 
             List<Location> spawns = new ArrayList<>();
             for (Object obj : sec.getList("spawnPoints", Collections.emptyList())) {
-                if (obj instanceof List<?> coords && coords.size() >= 3) {
+                if (obj instanceof List<?> coords && coords.size() >= 3
+                        && coords.get(0) instanceof Number
+                        && coords.get(1) instanceof Number
+                        && coords.get(2) instanceof Number) {
                     double x = ((Number) coords.get(0)).doubleValue();
                     double y = ((Number) coords.get(1)).doubleValue();
                     double z = ((Number) coords.get(2)).doubleValue();
                     spawns.add(new Location(world, x, y, z));
                 }
+            }
+
+            if (spawns.isEmpty()) {
+                plugin.getLogger().severe("Arena " + worldName + " has no valid spawn points. Skipping.");
+                continue;
             }
 
             arena.setSpawnPoints(spawns);
@@ -107,6 +121,12 @@ public class ArenaManager {
     public void resetArena(Arena arena, Runnable callback) {
         String worldName = arena.getWorldName();
         World world = Bukkit.getWorld(worldName);
+
+        if (!templateWorld.exists() || !templateWorld.isDirectory()) {
+            plugin.getLogger().severe("Cannot reset arena " + worldName + "; template world missing: " + templateWorld.getAbsolutePath());
+            runResetCallback(callback);
+            return;
+        }
 
         if (world != null) {
             Bukkit.unloadWorld(world, false);
@@ -125,8 +145,9 @@ public class ArenaManager {
                 new File(arenaFolder, "uid.dat").delete();
                 new File(arenaFolder, "session.lock").delete();
 
-            } catch (IOException e) {
-                plugin.getLogger().severe("Failed to reset arena world " + worldName);
+            } catch (IOException | RuntimeException e) {
+                plugin.getLogger().severe("Failed to reset arena world " + worldName + ": " + e.getMessage());
+                runResetCallback(callback);
                 return;
             }
 
@@ -157,36 +178,58 @@ public class ArenaManager {
                     }
                 } else {
                     plugin.getLogger().severe("Failed to load world " + worldName);
+                    if (callback != null) {
+                        callback.run();
+                    }
                 }
             });
         });
     }
 
+    private void runResetCallback(Runnable callback) {
+        if (callback != null) {
+            Bukkit.getScheduler().runTask(plugin, callback);
+        }
+    }
+
     private void copyFolder(Path source, Path target) throws IOException {
-        Files.walk(source).forEach(path -> {
-            try {
-                Path dest = target.resolve(source.relativize(path));
-                if (Files.isDirectory(path)) {
-                    Files.createDirectories(dest);
-                } else {
-                    Files.copy(path, dest, StandardCopyOption.REPLACE_EXISTING);
+        try (var paths = Files.walk(source)) {
+            paths.forEach(path -> {
+                try {
+                    Path dest = target.resolve(source.relativize(path));
+                    if (Files.isDirectory(path)) {
+                        Files.createDirectories(dest);
+                    } else {
+                        Files.copy(path, dest, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+            });
+        }
     }
 
     private void deleteFolder(Path path) throws IOException {
-        Files.walk(path)
-                .sorted(Comparator.reverseOrder())
-                .forEach(p -> {
-                    try {
-                        Files.delete(p);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+        try (var paths = Files.walk(path)) {
+            paths.sorted(Comparator.reverseOrder())
+                    .forEach(p -> {
+                        try {
+                            Files.delete(p);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        }
+    }
+
+    public Collection<Arena> getArenas() {
+        return arenas.values();
+    }
+
+    public Arena getArenaByDisplayName(String displayName) {
+        return arenas.values().stream()
+                .filter(a -> a.getDisplayName().equalsIgnoreCase(displayName))
+                .findFirst().orElse(null);
     }
 
 

@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.example.pillars.GameSession;
 import org.example.pillars.entities.Arena;
 import org.example.pillars.enums.GameState;
+import org.example.pillars.gui.ArenaMenu;
 import org.example.pillars.managers.ArenaManager;
 import org.example.pillars.managers.GameSessionManager;
 import org.example.pillars.managers.HudManager;
@@ -31,12 +32,18 @@ public class PillarsCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
         if (!(sender instanceof Player player)) return true;
-        if (args.length < 1) return true;
+        if (args.length < 1) {
+            hudManager.sendCommandUsage(player);
+            return true;
+        }
 
         switch (args[0].toLowerCase()) {
 
             case "join" -> {
-                if (args.length < 2) return true;
+                if (args.length < 2) {
+                    hudManager.sendJoinUsage(player);
+                    return true;
+                }
 
                 Arena arena = arenaManager.getArena(args[1]);
                 if (arena == null) {
@@ -60,6 +67,11 @@ public class PillarsCommand implements CommandExecutor {
             }
 
             case "forcestart" -> {
+                if (!player.hasPermission("pillars.forcestart")) {
+                    hudManager.sendNoPermission(player);
+                    return true;
+                }
+
                 GameSession session = gameSessionManager.getSessionByPlayer(player);
 
                 if (session == null) {
@@ -75,6 +87,17 @@ public class PillarsCommand implements CommandExecutor {
                 session.forceStart();
                 hudManager.sendForceStartSuccess(player);
             }
+
+            case "menu" -> {
+                new ArenaMenu(
+                        player,
+                        arenaManager,
+                        gameSessionManager,
+                        hudManager
+                ).open();
+            }
+
+            default -> hudManager.sendCommandUsage(player);
         }
 
         return true;

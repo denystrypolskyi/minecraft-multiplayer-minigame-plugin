@@ -1,6 +1,6 @@
 package org.example.pillars.entities;
 
-public class PlayerRecord {
+public class PlayerStats {
     private int kills = 0;
     private int wins = 0;
 
