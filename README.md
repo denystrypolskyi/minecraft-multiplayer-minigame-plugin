@@ -1,6 +1,6 @@
-# PillarsPlugin
+# PillarsMC
 
-PillarsPlugin is a Paper Minecraft minigame plugin where players join pillar arenas, fight with randomized items, and earn persistent win/kill stats.
+A Paper Minecraft minigame plugin where players join pillar arenas, fight with randomized items, and track persistent win/kill statistics.
 
 ## Requirements
 
