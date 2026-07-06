@@ -5,9 +5,12 @@ api-version: 1.21
 commands:
   pillars:
     description: Pillars main command
-    usage: /<command> <join|leave|forcestart|menu>
+    usage: /<command> <join|quickjoin|leave|forcestart|menu|admin>
     aliases: [p]
 permissions:
   pillars.forcestart:
     description: Allows force starting Pillars games
+    default: op
+  pillars.admin:
+    description: Allows editing Pillars gameplay configuration in-game
     default: op

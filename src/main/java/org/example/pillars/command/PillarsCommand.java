@@ -1,31 +1,38 @@
 package org.example.pillars.command;
 
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.example.pillars.GameSession;
 import org.example.pillars.entities.Arena;
 import org.example.pillars.enums.GameState;
+import org.example.pillars.gui.AdminConfigMenu;
 import org.example.pillars.gui.ArenaMenu;
 import org.example.pillars.managers.ArenaManager;
 import org.example.pillars.managers.GameSessionManager;
 import org.example.pillars.managers.HudManager;
+import org.example.pillars.managers.ItemManager;
 
 public class PillarsCommand implements CommandExecutor {
 
     private final ArenaManager arenaManager;
     private final GameSessionManager gameSessionManager;
     private final HudManager hudManager;
+    private final ItemManager itemManager;
 
     public PillarsCommand(
             ArenaManager arenaManager,
             GameSessionManager gameSessionManager,
-            HudManager hudManager
+            HudManager hudManager,
+            ItemManager itemManager
     ) {
         this.arenaManager = arenaManager;
         this.gameSessionManager = gameSessionManager;
         this.hudManager = hudManager;
+        this.itemManager = itemManager;
     }
 
     @Override
@@ -48,6 +55,17 @@ public class PillarsCommand implements CommandExecutor {
                 Arena arena = arenaManager.getArena(args[1]);
                 if (arena == null) {
                     hudManager.sendArenaNotFound(player);
+                    return true;
+                }
+
+                gameSessionManager.joinSession(player, arena);
+            }
+
+            case "quickjoin", "joinactive" -> {
+                Arena arena = gameSessionManager.findQuickJoinArena();
+
+                if (arena == null) {
+                    hudManager.sendNoJoinableSession(player);
                     return true;
                 }
 
@@ -84,8 +102,9 @@ public class PillarsCommand implements CommandExecutor {
                     return true;
                 }
 
-                session.forceStart();
-                hudManager.sendForceStartSuccess(player);
+                if (session.forceStart(player)) {
+                    hudManager.sendForceStartSuccess(player);
+                }
             }
 
             case "menu" -> {
@@ -95,6 +114,73 @@ public class PillarsCommand implements CommandExecutor {
                         gameSessionManager,
                         hudManager
                 ).open();
+            }
+
+            case "admin" -> {
+                if (!player.hasPermission("pillars.admin")) {
+                    hudManager.sendNoPermission(player);
+                    return true;
+                }
+
+                new AdminConfigMenu(player, itemManager, hudManager).open();
+            }
+
+            case "itemadd" -> {
+                if (!player.hasPermission("pillars.admin")) {
+                    hudManager.sendNoPermission(player);
+                    return true;
+                }
+
+                if (args.length < 2) {
+                    hudManager.sendItemAddUsage(player);
+                    return true;
+                }
+
+                ItemStack heldItem = player.getInventory().getItemInMainHand();
+                if (heldItem.getType() == Material.AIR) {
+                    hudManager.sendHoldItemToConfigure(player);
+                    return true;
+                }
+
+                int weight = 10;
+                if (args.length >= 3) {
+                    try {
+                        weight = Integer.parseInt(args[2]);
+                    } catch (NumberFormatException ignored) {
+                        hudManager.sendItemAddUsage(player);
+                        return true;
+                    }
+                }
+
+                if (itemManager.setCustomItemWeight(args[1], heldItem.getType(), weight)) {
+                    hudManager.sendItemConfigured(player, heldItem.getType(), args[1], weight);
+                } else {
+                    hudManager.sendItemAddUsage(player);
+                }
+            }
+
+            case "itemremove" -> {
+                if (!player.hasPermission("pillars.admin")) {
+                    hudManager.sendNoPermission(player);
+                    return true;
+                }
+
+                if (args.length < 3) {
+                    hudManager.sendItemRemoveUsage(player);
+                    return true;
+                }
+
+                Material material = Material.matchMaterial(args[2]);
+                if (material == null) {
+                    hudManager.sendUnknownMaterial(player);
+                    return true;
+                }
+
+                if (itemManager.removeItem(args[1], material)) {
+                    hudManager.sendItemRemoved(player, material, args[1]);
+                } else {
+                    hudManager.sendItemRemoveUsage(player);
+                }
             }
 
             default -> hudManager.sendCommandUsage(player);

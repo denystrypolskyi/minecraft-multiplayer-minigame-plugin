@@ -1,8 +1,10 @@
 package org.example.pillars.managers;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.*;
+import org.example.pillars.enums.GameState;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -39,13 +41,14 @@ public class HudManager {
                 "infoHeader",
                 "playerLine",
                 "onlineLine",
+                "statusLine",
                 "arenaLine",
                 "statHeader",
                 "killsLine",
                 "winsLine"
         };
 
-        int score = 10;
+        int score = 11;
 
         obj.getScore(nextBlank()).setScore(score--);
 
@@ -74,7 +77,7 @@ public class HudManager {
         return UNIQUE_ENTRIES[blankCounter++ % UNIQUE_ENTRIES.length] + " ";
     }
 
-    public void updatePlayerScoreboard(Player player, int players, int maxPlayers,
+    public void updatePlayerScoreboard(Player player, int players, int maxPlayers, GameState state,
                                        String arenaName, int kills, int wins) {
         initializeScoreboard(player);
 
@@ -90,6 +93,9 @@ public class HudManager {
         teams.get("onlineLine").setPrefix("§b⬤ §fOnline: ");
         teams.get("onlineLine").setSuffix("§b" + players + "§7/§b" + maxPlayers);
 
+        teams.get("statusLine").setPrefix("§d◆ §fStatus: ");
+        teams.get("statusLine").setSuffix(formatState(state));
+
         teams.get("arenaLine").setPrefix("§e⚔ §fArena: ");
         teams.get("arenaLine").setSuffix("§e" + arenaName);
 
@@ -102,7 +108,7 @@ public class HudManager {
         teams.get("winsLine").setSuffix("§6" + wins);
     }
 
-    public void updateArenaInfoForAllPlayers(Set<UUID> playersSet, int activeCount, int max, String arenaName) {
+    public void updateArenaInfoForAllPlayers(Set<UUID> playersSet, int activeCount, int max, GameState state, String arenaName) {
         for (UUID uuid : playersSet) {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null || !p.isOnline()) continue;
@@ -113,6 +119,11 @@ public class HudManager {
             Team online = teams.get("onlineLine");
             if (online != null) {
                 online.setSuffix("§b" + activeCount + "§7/§b" + max);
+            }
+
+            Team status = teams.get("statusLine");
+            if (status != null) {
+                status.setSuffix(formatState(state));
             }
 
             Team arena = teams.get("arenaLine");
@@ -173,12 +184,25 @@ public class HudManager {
         player.sendTitle("§c§lERROR", "§fThe game has already started!", FADE_IN, SHORT_STAY, FADE_OUT);
     }
 
-    public void sendItemCooldown(Player player, int secondsLeft) {
-        player.sendActionBar("§eItem delivery in §a" + secondsLeft + "§e seconds");
+    public void sendItemCooldown(Player player, int secondsLeft, long secondsUntilNextZoneDecrease, double zoneSize) {
+        String zoneTimer = secondsUntilNextZoneDecrease > 0
+                ? "§cZone -1 block in §e" + secondsUntilNextZoneDecrease + "s"
+                : "§cZone: §4Final size";
+
+        player.sendActionBar("§eItem in §a" + secondsLeft + "s §8| " + zoneTimer + " §8| §bSize: §f" + Math.ceil(zoneSize));
     }
 
     public void sendNotEnoughPlayersTitle(Player player) {
         player.sendTitle("§cNot enough players!", "§fThe game has stopped.", FADE_IN, MEDIUM_STAY, FADE_OUT);
+    }
+
+    public void sendWaitingForPlayers(Player player, int currentPlayers, int minPlayers) {
+        int needed = Math.max(0, minPlayers - currentPlayers);
+        String status = needed == 0
+                ? "§aStarting soon"
+                : "§eWaiting for §f" + needed + "§e more player" + (needed == 1 ? "" : "s");
+
+        player.sendActionBar(status + " §8| §bPlayers: §f" + currentPlayers + "§7/§f" + minPlayers);
     }
 
     public void sendSpectatorTitle(Player player) {
@@ -205,6 +229,30 @@ public class HudManager {
         player.sendMessage("§aThe game has been force-started!");
     }
 
+    public void sendPlayerJoinedArena(Set<UUID> recipients, Player player, String arenaName, int currentPlayers, int maxPlayers) {
+        String message = "§6§lPILLARS §8» §a" + player.getName() + " §7joined §e" + arenaName
+                + " §8(§b" + currentPlayers + "§7/§b" + maxPlayers + "§8)";
+
+        for (UUID uuid : recipients) {
+            Player recipient = Bukkit.getPlayer(uuid);
+            if (recipient != null && recipient.isOnline()) {
+                recipient.sendMessage(message);
+            }
+        }
+    }
+
+    public void broadcastForceStartedArena(Player player, String arenaName) {
+        Bukkit.broadcastMessage("§6§lPILLARS §8» §e" + arenaName + " §ahas been force-started §7by §f" + player.getName());
+    }
+
+    public void broadcastGameStarted(String arenaName) {
+        Bukkit.broadcastMessage("§6§lPILLARS §8» §aThe game has started on §e" + arenaName + "§a. §7Good luck!");
+    }
+
+    public void broadcastWinner(String winnerName, String arenaName) {
+        Bukkit.broadcastMessage("§6§lPILLARS §8» §e" + winnerName + " §6won §e" + arenaName + "§6! §aCongratulations!");
+    }
+
     public void sendNoWinnerTitle(Player player) {
         player.sendTitle("§c§lNO WINNER", "§7All players have been eliminated", FADE_IN, LONG_STAY, FADE_OUT);
     }
@@ -214,11 +262,43 @@ public class HudManager {
     }
 
     public void sendCommandUsage(Player player) {
-        player.sendMessage("§eUsage: §f/pillars <join|leave|forcestart|menu>");
+        player.sendMessage("§eUsage: §f/pillars <join|quickjoin|leave|forcestart|menu|admin>");
     }
 
     public void sendJoinUsage(Player player) {
         player.sendMessage("§eUsage: §f/pillars join <arena>");
+    }
+
+    public void sendNoJoinableSession(Player player) {
+        player.sendMessage("§cNo joinable arena was found.");
+    }
+
+    public void sendItemAddUsage(Player player) {
+        player.sendMessage("§eUsage: §f/pillars itemadd <common|rare|legendary> [weight]");
+    }
+
+    public void sendItemRemoveUsage(Player player) {
+        player.sendMessage("§eUsage: §f/pillars itemremove <common|rare|legendary> <material>");
+    }
+
+    public void sendHoldItemToConfigure(Player player) {
+        player.sendMessage("§cHold the item you want to configure in your main hand.");
+    }
+
+    public void sendUnknownMaterial(Player player) {
+        player.sendMessage("§cUnknown material.");
+    }
+
+    public void sendItemConfigured(Player player, Material material, String rarity, int weight) {
+        player.sendMessage("§6§lPILLARS §8» §aAdded §f" + material.name() + " §ato §e" + rarity.toLowerCase() + " §awith weight §f" + weight + "§a.");
+    }
+
+    public void sendItemRemoved(Player player, Material material, String rarity) {
+        player.sendMessage("§6§lPILLARS §8» §eDisabled §f" + material.name() + " §ein §f" + rarity.toLowerCase() + "§e items.");
+    }
+
+    public void sendAdminConfigUpdated(Player player, int commonPercent, int rarePercent, int legendaryPercent) {
+        player.sendMessage("§6§lPILLARS §8» §aRarity updated: §7Common §f" + commonPercent + "% §8| §bRare §f" + rarePercent + "% §8| §6Legendary §f" + legendaryPercent + "%");
     }
 
     public void sendNoSpawnAvailable(Player player) {
@@ -239,5 +319,19 @@ public class HudManager {
 
     public void sendWitherStartTitle(Player player) {
         player.sendTitle("§5§lWARNING!", "§cThe Wither phase has started!", FADE_IN, LONG_STAY, FADE_OUT);
+    }
+
+    private String formatState(GameState state) {
+        if (state == null) {
+            return "§7Unknown";
+        }
+
+        return switch (state) {
+            case WAITING -> "§eWaiting for players";
+            case STARTING, COUNTDOWN -> "§6Starting";
+            case RUNNING -> "§aIn progress";
+            case ENDING -> "§cEnding";
+            case RESETTING -> "§7Resetting";
+        };
     }
 }

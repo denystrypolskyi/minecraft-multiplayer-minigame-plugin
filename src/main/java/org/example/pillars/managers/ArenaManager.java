@@ -112,6 +112,8 @@ public class ArenaManager {
             }
 
             arena.setSpawnPoints(spawns);
+            int defaultMinPlayers = Math.max(1, (int) Math.ceil(spawns.size() / 2.0));
+            arena.setMinPlayers(Math.max(1, Math.min(spawns.size(), sec.getInt("minPlayers", defaultMinPlayers))));
             arenas.put(worldName, arena);
         }
 

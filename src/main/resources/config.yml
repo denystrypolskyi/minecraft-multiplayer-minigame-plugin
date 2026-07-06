@@ -1,5 +1,4 @@
 settings:
-  minPlayers: 4
   beginCountdownSeconds: 5
   endGameLobbyCountdownSeconds: 5
   endGameSpectatorDelayTicks: 40
@@ -12,11 +11,11 @@ settings:
   witherEffectPeriodTicks: 40
   witherEffectAmplifier: 1
   itemRarity:
-    legendaryPercent: 5
-    rarePercent: 15
+    legendaryPercent: 6
+    rarePercent: 20
 
 arenas:
-  # ------------------ 4 игрока ------------------
+  # ------------------ 4 players ------------------
   arena4_1:
     worldName: "arena4_1"
     spawnPoints:
@@ -25,6 +24,7 @@ arenas:
       - [6, 100, -6]
       - [6, 100, 6]
     displayName: "Arena 4 #1"
+    minPlayers: 2
     itemCooldownSeconds: 5
 
   arena4_2:
@@ -35,6 +35,7 @@ arenas:
       - [0, 100, -6]
       - [0, 100, 6]
     displayName: "Arena 4 #2"
+    minPlayers: 2
     itemCooldownSeconds: 5
 
   arena4_3:
@@ -45,9 +46,10 @@ arenas:
       - [-6, 100, 6]
       - [6, 100, 6]
     displayName: "Arena 4 #3"
+    minPlayers: 2
     itemCooldownSeconds: 5
 
-  # ------------------ 8 игроков ------------------
+  # ------------------ 8 players ------------------
   arena8_1:
     worldName: "arena8_1"
     spawnPoints:
@@ -60,6 +62,7 @@ arenas:
       - [0, 100, -14]
       - [9.9, 100, -9.9]
     displayName: "Arena 8 #1"
+    minPlayers: 4
     itemCooldownSeconds: 2
 
   arena8_2:
@@ -74,6 +77,7 @@ arenas:
       - [-9.9, 100, -9.9]
       - [9.9, 100, -9.9]
     displayName: "Arena 8 #2"
+    minPlayers: 4
     itemCooldownSeconds: 2
 
   arena8_3:
@@ -88,9 +92,10 @@ arenas:
       - [-9.9, 100, 9.9]
       - [-9.9, 100, -9.9]
     displayName: "Arena 8 #3"
+    minPlayers: 4
     itemCooldownSeconds: 2
 
-  # ------------------ 12 игроков ------------------
+  # ------------------ 12 players ------------------
   arena12_1:
     worldName: "arena12_1"
     spawnPoints:
@@ -107,6 +112,7 @@ arenas:
       - [9.0, 100, -15.59]
       - [15.59, 100, -9.0]
     displayName: "Arena 12 #1"
+    minPlayers: 6
     itemCooldownSeconds: 2
 
   arena12_2:
@@ -125,6 +131,7 @@ arenas:
       - [9.0, 100, -15.59]
       - [15.59, 100, -9.0]
     displayName: "Arena 12 #2"
+    minPlayers: 6
     itemCooldownSeconds: 2
 
   arena12_3:
@@ -143,4 +150,5 @@ arenas:
       - [9.0, 100, -15.59]
       - [15.59, 100, -9.0]
     displayName: "Arena 12 #3"
+    minPlayers: 6
     itemCooldownSeconds: 2

@@ -8,6 +8,7 @@ public class Arena {
     private String worldName;
     private String displayName;
     private int itemCooldownSeconds;
+    private int minPlayers;
     private List<Location> spawnPoints;
 
     public String getWorldName() {
@@ -20,6 +21,10 @@ public class Arena {
 
     public int getItemCooldownSeconds() {
         return itemCooldownSeconds;
+    }
+
+    public int getMinPlayers() {
+        return minPlayers;
     }
 
     public List<Location> getSpawnPoints() {
@@ -36,6 +41,10 @@ public class Arena {
 
     public void setItemCooldownSeconds(int seconds) {
         this.itemCooldownSeconds = seconds;
+    }
+
+    public void setMinPlayers(int minPlayers) {
+        this.minPlayers = minPlayers;
     }
 
     public void setSpawnPoints(List<Location> spawnPoints) {

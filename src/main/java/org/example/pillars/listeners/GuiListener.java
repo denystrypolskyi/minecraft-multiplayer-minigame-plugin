@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.example.pillars.gui.AdminConfigMenu;
 import org.example.pillars.gui.ArenaMenu;
 
 public class GuiListener implements Listener {
@@ -15,6 +16,9 @@ public class GuiListener implements Listener {
 
         if (ArenaMenu.isArenaMenu(event.getClickedInventory())) {
             ArenaMenu menu = (ArenaMenu) event.getClickedInventory().getHolder();
+            menu.handleClick(event);
+        } else if (AdminConfigMenu.isAdminConfigMenu(event.getClickedInventory())) {
+            AdminConfigMenu menu = (AdminConfigMenu) event.getClickedInventory().getHolder();
             menu.handleClick(event);
         }
     }

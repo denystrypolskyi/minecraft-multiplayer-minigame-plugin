@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.example.pillars.entities.Arena;
 import org.example.pillars.GameSession;
+import org.example.pillars.enums.GameState;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -91,5 +92,72 @@ public class GameSessionManager {
 
     public GameSession getSession(Arena arena) {
         return sessions.get(arena.getWorldName());
+    }
+
+    public Arena findQuickJoinArena() {
+        GameSession session = findJoinableSessionWithPlayers();
+        if (session != null) {
+            return session.getArena();
+        }
+
+        Arena smallest = null;
+
+        for (Arena arena : arenaManager.getArenas()) {
+            if (!isJoinableArena(arena)) {
+                continue;
+            }
+
+            if (smallest == null || arena.getSpawnPoints().size() < smallest.getSpawnPoints().size()) {
+                smallest = arena;
+            }
+        }
+
+        return smallest;
+    }
+
+    private GameSession findJoinableSessionWithPlayers() {
+        GameSession best = null;
+
+        for (GameSession session : sessions.values()) {
+            if (!isJoinableSessionWithPlayers(session)) {
+                continue;
+            }
+
+            if (best == null || session.getActivePlayerIds().size() > best.getActivePlayerIds().size()) {
+                best = session;
+            }
+        }
+
+        return best;
+    }
+
+    private boolean isJoinableSessionWithPlayers(GameSession session) {
+        if (session.getState() != GameState.WAITING && session.getState() != GameState.STARTING) {
+            return false;
+        }
+
+        if (session.getActivePlayerIds().isEmpty()) {
+            return false;
+        }
+
+        if (session.getArena().getSpawnPoints() == null) {
+            return false;
+        }
+
+        return session.getActivePlayerIds().size() < session.getArena().getSpawnPoints().size();
+    }
+
+    private boolean isJoinableArena(Arena arena) {
+        if (arena.getSpawnPoints() == null || arena.getSpawnPoints().isEmpty()) {
+            return false;
+        }
+
+        GameSession session = getSession(arena);
+        if (session == null) {
+            return true;
+        }
+
+        return session.getState() == GameState.WAITING
+                && session.getActivePlayerIds().size() < arena.getSpawnPoints().size();
     }
 }

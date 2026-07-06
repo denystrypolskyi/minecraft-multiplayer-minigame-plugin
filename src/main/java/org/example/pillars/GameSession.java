@@ -32,6 +32,7 @@ public class GameSession {
     private final JavaPlugin plugin;
 
     private BukkitTask beginGameCountdownTask;
+    private BukkitTask waitingForPlayersTask;
     private BukkitTask itemDistributionTask;
     private BukkitTask witherCountdownTask;
     private BukkitTask witherEffectTask;
@@ -44,6 +45,8 @@ public class GameSession {
 
     private boolean resetInProgress = false;
     private boolean forceStart = false;
+    private long borderShrinkEndTimeMillis = -1L;
+    private double borderShrinkBlocksPerSecond = 0.0;
 
     private final int minPlayers;
     private final int beginCountdownSeconds;
@@ -81,7 +84,7 @@ public class GameSession {
         this.arenaManager = arenaManager;
         this.arena = arena;
 
-        this.minPlayers = Math.max(1, plugin.getConfig().getInt("settings.minPlayers", 4));
+        this.minPlayers = Math.max(1, arena.getMinPlayers());
         this.beginCountdownSeconds = Math.max(1, plugin.getConfig().getInt("settings.beginCountdownSeconds", 5));
         this.endGameLobbyCountdownSeconds = Math.max(1, plugin.getConfig().getInt("settings.endGameLobbyCountdownSeconds", 5));
         this.endGameSpectatorDelayTicks = Math.max(0L, plugin.getConfig().getLong("settings.endGameSpectatorDelayTicks", 40L));
@@ -113,10 +116,14 @@ public class GameSession {
             return;
         }
         addActivePlayer(player);
+        hudManager.sendPlayerJoinedArena(getAllPlayerIds(), player, arena.getDisplayName(), activePlayers.size(), arena.getSpawnPoints().size());
 
-        hudManager.updateArenaInfoForAllPlayers(getAllPlayerIds(), getAllPlayerIds().size(), arena.getSpawnPoints().size(), arena.getDisplayName());
+        updateArenaHudForAllPlayers();
 
-        hudManager.updatePlayerScoreboard(player, getAllPlayerIds().size(), arena.getSpawnPoints().size(), arena.getDisplayName(), statsManager.getStats(player.getUniqueId()).getKills(), statsManager.getStats(player.getUniqueId()).getWins());
+        hudManager.updatePlayerScoreboard(player, getAllPlayerIds().size(), arena.getSpawnPoints().size(), state, arena.getDisplayName(), statsManager.getStats(player.getUniqueId()).getKills(), statsManager.getStats(player.getUniqueId()).getWins());
+        if (state == GameState.WAITING && activePlayers.size() < minPlayers) {
+            startWaitingForPlayersTask();
+        }
         startBeginGameCountdown();
     }
 
@@ -141,17 +148,19 @@ public class GameSession {
             if (state == GameState.STARTING && activePlayers.size() < minPlayers) {
                 state = GameState.WAITING;
                 forceStart = false;
+                updateArenaHudForAllPlayers();
+                startWaitingForPlayersTask();
             }
         }
 
         playerManager.resetAndReturnToLobby(player, lobbyWorldName);
         hudManager.cleanupPlayerScoreboard(player);
-        hudManager.updateArenaInfoForAllPlayers(
-                getAllPlayerIds(),
-                getAllPlayerIds().size(),
-                arena.getSpawnPoints().size(),
-                arena.getDisplayName()
-        );
+        updateArenaHudForAllPlayers();
+        if (state == GameState.WAITING && !activePlayers.isEmpty()) {
+            startWaitingForPlayersTask();
+        } else if (activePlayers.isEmpty()) {
+            cancelWaitingForPlayersTask();
+        }
 
         if (state == GameState.RUNNING) {
             evaluateGameEnd();
@@ -185,16 +194,19 @@ public class GameSession {
         evaluateGameEnd();
     }
 
-    public void forceStart() {
+    public boolean forceStart(Player startedBy) {
         if (state != GameState.WAITING) {
-            return;
+            return false;
         }
 
         forceStart = true;
+        hudManager.broadcastForceStartedArena(startedBy, arena.getDisplayName());
 
         if (beginGameCountdownTask == null) {
             startBeginGameCountdown();
         }
+
+        return true;
     }
 
     private void handleGameEnd(Player winner) {
@@ -202,6 +214,7 @@ public class GameSession {
 
         stopSessionTasks();
         state = GameState.ENDING;
+        updateArenaHudForAllPlayers();
 
         Set<UUID> allPlayersSnapshot = new HashSet<>(activePlayers);
         allPlayersSnapshot.addAll(spectators);
@@ -220,6 +233,7 @@ public class GameSession {
         if (winner != null) {
             statsManager.incrementWins(winner.getUniqueId());
             hudManager.updatePlayerStats(winner, statsManager.getStats(winner.getUniqueId()).getKills(), statsManager.getStats(winner.getUniqueId()).getWins());
+            hudManager.broadcastWinner(winner.getName(), arena.getDisplayName());
             for (UUID uuid : allPlayersSnapshot) {
                 Player player = Bukkit.getPlayer(uuid);
                 if (player != null) {
@@ -346,6 +360,7 @@ public class GameSession {
 
         resetInProgress = true;
         state = GameState.RESETTING;
+        updateArenaHudForAllPlayers();
 
         resetSession();
         resetArenaInternal();
@@ -376,6 +391,7 @@ public class GameSession {
 
     private void stopSessionTasks() {
         cancelBeginGameCountdownTask();
+        cancelWaitingForPlayersTask();
         cancelItemDistributionTask();
         cancelWitherTask();
         cancelFinalZoneTask();
@@ -437,11 +453,23 @@ public class GameSession {
         return state;
     }
 
+    private void updateArenaHudForAllPlayers() {
+        hudManager.updateArenaInfoForAllPlayers(
+                getAllPlayerIds(),
+                getAllPlayerIds().size(),
+                arena.getSpawnPoints().size(),
+                state,
+                arena.getDisplayName()
+        );
+    }
+
     public void startBeginGameCountdown() {
         if (state != GameState.WAITING) return;
         if ((activePlayers.size() < minPlayers && !forceStart) || beginGameCountdownTask != null) return;
 
         state = GameState.STARTING;
+        cancelWaitingForPlayersTask();
+        updateArenaHudForAllPlayers();
         final int[] counter = {beginCountdownSeconds};
 
         beginGameCountdownTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
@@ -452,6 +480,9 @@ public class GameSession {
 
             if (!forceStart && activePlayers.size() < minPlayers) {
                 cancelBeginGameCountdownTask();
+                state = GameState.WAITING;
+                updateArenaHudForAllPlayers();
+                startWaitingForPlayersTask();
                 for (UUID uuid : activePlayers) {
                     Player player = Bukkit.getPlayer(uuid);
                     if (player != null) {
@@ -475,6 +506,7 @@ public class GameSession {
                 state = GameState.RUNNING;
                 frozenPlayers.clear();
                 cancelBeginGameCountdownTask();
+                updateArenaHudForAllPlayers();
 
                 for (UUID uuid : getActivePlayerIds()) {
                     if (uuid == null) {
@@ -488,8 +520,11 @@ public class GameSession {
                     soundManager.playGameStartSound(player);
                 }
 
-                startItemDistributionTask();
                 startWorldBorder();
+                if (!forceStart) {
+                    hudManager.broadcastGameStarted(arena.getDisplayName());
+                }
+                startItemDistributionTask();
             }
         }, 0L, 20L);
     }
@@ -504,7 +539,8 @@ public class GameSession {
             for (UUID uuid : activePlayers) {
                 Player player = Bukkit.getPlayer(uuid);
                 if (player != null) {
-                    hudManager.sendItemCooldown(player, counter[0]);
+                    double currentBorderSize = getCurrentBorderSize();
+                    hudManager.sendItemCooldown(player, counter[0], getSecondsUntilNextBorderDecrease(currentBorderSize), currentBorderSize);
                 }
             }
 
@@ -520,6 +556,24 @@ public class GameSession {
 
             counter[0]--;
             if (counter[0] <= 0) counter[0] = interval;
+        }, 0L, 20L);
+    }
+
+    private void startWaitingForPlayersTask() {
+        if (waitingForPlayersTask != null) return;
+
+        waitingForPlayersTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (state != GameState.WAITING || activePlayers.isEmpty()) {
+                cancelWaitingForPlayersTask();
+                return;
+            }
+
+            for (UUID uuid : activePlayers) {
+                Player player = Bukkit.getPlayer(uuid);
+                if (player != null) {
+                    hudManager.sendWaitingForPlayers(player, activePlayers.size(), minPlayers);
+                }
+            }
         }, 0L, 20L);
     }
 
@@ -637,6 +691,8 @@ public class GameSession {
         border.setWarningTime(0);
 
         border.setSize(borderMinSize, borderShrinkSeconds);
+        borderShrinkEndTimeMillis = System.currentTimeMillis() + (borderShrinkSeconds * 1000L);
+        borderShrinkBlocksPerSecond = Math.max(0.0, (initialSize - borderMinSize) / borderShrinkSeconds);
 
         witherStartDelayTask = Bukkit.getScheduler().runTaskLater(
                 plugin,
@@ -691,6 +747,13 @@ public class GameSession {
         }
     }
 
+    private void cancelWaitingForPlayersTask() {
+        if (waitingForPlayersTask != null) {
+            waitingForPlayersTask.cancel();
+            waitingForPlayersTask = null;
+        }
+    }
+
     private void cancelItemDistributionTask() {
         if (itemDistributionTask != null) {
             itemDistributionTask.cancel();
@@ -699,6 +762,8 @@ public class GameSession {
     }
 
     private void stopWorldBorder() {
+        borderShrinkEndTimeMillis = -1L;
+        borderShrinkBlocksPerSecond = 0.0;
         if (!arena.getSpawnPoints().isEmpty()) {
             World world = arena.getSpawnPoints().getFirst().getWorld();
             if (world != null) {
@@ -709,6 +774,39 @@ public class GameSession {
                 border.setDamageBuffer(5);
             }
         }
+    }
+
+    private long getSecondsUntilNextBorderDecrease(double currentSize) {
+        if (borderShrinkEndTimeMillis <= 0L) {
+            return 0L;
+        }
+
+        if (borderShrinkBlocksPerSecond <= 0.0 || currentSize <= borderMinSize) {
+            return 0L;
+        }
+
+        double visibleSize = Math.ceil(currentSize);
+        double minVisibleSize = Math.ceil(borderMinSize);
+        if (visibleSize <= minVisibleSize) {
+            return 0L;
+        }
+
+        double nextVisibleSize = Math.max(minVisibleSize, visibleSize - 1.0);
+        double seconds = (currentSize - nextVisibleSize) / borderShrinkBlocksPerSecond;
+        return Math.max(1L, (long) Math.ceil(seconds));
+    }
+
+    private double getCurrentBorderSize() {
+        if (arena.getSpawnPoints().isEmpty()) {
+            return borderMinSize;
+        }
+
+        World world = arena.getSpawnPoints().getFirst().getWorld();
+        if (world == null) {
+            return borderMinSize;
+        }
+
+        return world.getWorldBorder().getSize();
     }
 
 

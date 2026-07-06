@@ -51,6 +51,6 @@ public final class PillarsPlugin extends JavaPlugin {
             return;
         }
 
-        pillarsCommand.setExecutor(new PillarsCommand(arenaManager, gameSessionManager, hudManager));
+        pillarsCommand.setExecutor(new PillarsCommand(arenaManager, gameSessionManager, hudManager, itemManager));
     }
 }
