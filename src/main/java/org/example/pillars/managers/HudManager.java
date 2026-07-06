@@ -274,11 +274,13 @@ public class HudManager {
     }
 
     public void sendItemAddUsage(Player player) {
-        player.sendMessage("§eUsage: §f/pillars itemadd <common|rare|legendary> [weight]");
+        player.sendMessage("§eUsage: §f/pillars itemadd <common|rare|legendary>");
+        player.sendMessage("§7Advanced: §f/pillars itemadd <common|rare|legendary> <weight>");
     }
 
     public void sendItemRemoveUsage(Player player) {
-        player.sendMessage("§eUsage: §f/pillars itemremove <common|rare|legendary> <material>");
+        player.sendMessage("§eUsage: §f/pillars itemremove <common|rare|legendary>");
+        player.sendMessage("§7Advanced: §f/pillars itemremove <common|rare|legendary> <material>");
     }
 
     public void sendHoldItemToConfigure(Player player) {
@@ -290,7 +292,8 @@ public class HudManager {
     }
 
     public void sendItemConfigured(Player player, Material material, String rarity, int weight) {
-        player.sendMessage("§6§lPILLARS §8» §aAdded §f" + material.name() + " §ato §e" + rarity.toLowerCase() + " §awith weight §f" + weight + "§a.");
+        player.sendMessage("§6§lPILLARS §8» §aAdded §f" + material.name() + " §ato §e" + rarity.toLowerCase() + " §aitems.");
+        player.sendMessage("§7Internal weight: §f" + weight);
     }
 
     public void sendItemRemoved(Player player, Material material, String rarity) {

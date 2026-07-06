@@ -9,6 +9,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
 
@@ -108,6 +109,15 @@ public class ItemManager {
         return true;
     }
 
+    public boolean addItemWithDefaultWeight(String rarity, Material material) {
+        int weight = getDefaultWeight(rarity);
+        if (weight <= 0) {
+            return false;
+        }
+
+        return setCustomItemWeight(rarity, material, weight);
+    }
+
     public boolean removeItem(String rarity, Material material) {
         String normalizedRarity = normalizeRarity(rarity);
         if (normalizedRarity == null || material == null) {
@@ -145,6 +155,35 @@ public class ItemManager {
         }
 
         return items;
+    }
+
+    public Map<Material, Integer> getItemPool(String rarity) {
+        String normalizedRarity = normalizeRarity(rarity);
+        if (normalizedRarity == null) {
+            return Collections.emptyMap();
+        }
+
+        Map<Material, Integer> pool = switch (normalizedRarity) {
+            case "common" -> commonItems;
+            case "rare" -> rareItems;
+            case "legendary" -> legendaryItems;
+            default -> Collections.emptyMap();
+        };
+
+        return Collections.unmodifiableMap(pool);
+    }
+
+    public int getDefaultWeight(String rarity) {
+        if (rarity == null) {
+            return 0;
+        }
+
+        return switch (rarity.toLowerCase()) {
+            case "common" -> 10;
+            case "rare" -> 5;
+            case "legendary" -> 1;
+            default -> 0;
+        };
     }
 
     private void saveDefaultItemPools() {

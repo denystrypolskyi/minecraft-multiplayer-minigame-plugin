@@ -39,20 +39,21 @@ public class AdminConfigMenu implements InventoryHolder {
         }
 
         inventory.setItem(4, infoItem());
+        inventory.setItem(0, actionItem(Material.ARROW, "§eBack", "back"));
 
-        inventory.setItem(10, actionItem(Material.RED_DYE, "§cLegendary -5%", "legendary:-5"));
-        inventory.setItem(11, actionItem(Material.REDSTONE, "§cLegendary -1%", "legendary:-1"));
-        inventory.setItem(12, displayItem(Material.NETHERITE_BLOCK, "§6Legendary", itemManager.getLegendaryPercent()));
-        inventory.setItem(13, actionItem(Material.GLOWSTONE_DUST, "§aLegendary +1%", "legendary:1"));
-        inventory.setItem(14, actionItem(Material.LIME_DYE, "§aLegendary +5%", "legendary:5"));
+        inventory.setItem(9, actionItem(Material.RED_DYE, "§cLegendary -5%", "legendary:-5"));
+        inventory.setItem(10, actionItem(Material.REDSTONE, "§cLegendary -1%", "legendary:-1"));
+        inventory.setItem(11, displayItem(Material.NETHERITE_BLOCK, "§6Legendary", itemManager.getLegendaryPercent()));
+        inventory.setItem(12, actionItem(Material.GLOWSTONE_DUST, "§aLegendary +1%", "legendary:1"));
+        inventory.setItem(13, actionItem(Material.LIME_DYE, "§aLegendary +5%", "legendary:5"));
 
-        inventory.setItem(16, actionItem(Material.ORANGE_DYE, "§cRare -5%", "rare:-5"));
-        inventory.setItem(17, actionItem(Material.COPPER_INGOT, "§cRare -1%", "rare:-1"));
-        inventory.setItem(18, displayItem(Material.OBSIDIAN, "§bRare", itemManager.getRarePercent()));
-        inventory.setItem(19, actionItem(Material.LAPIS_LAZULI, "§aRare +1%", "rare:1"));
-        inventory.setItem(20, actionItem(Material.EMERALD, "§aRare +5%", "rare:5"));
+        inventory.setItem(18, actionItem(Material.ORANGE_DYE, "§cRare -5%", "rare:-5"));
+        inventory.setItem(19, actionItem(Material.COPPER_INGOT, "§cRare -1%", "rare:-1"));
+        inventory.setItem(20, displayItem(Material.OBSIDIAN, "§bRare", itemManager.getRarePercent()));
+        inventory.setItem(21, actionItem(Material.LAPIS_LAZULI, "§aRare +1%", "rare:1"));
+        inventory.setItem(22, actionItem(Material.EMERALD, "§aRare +5%", "rare:5"));
 
-        inventory.setItem(22, displayItem(Material.STONE, "§7Common", itemManager.getCommonPercent()));
+        inventory.setItem(16, displayItem(Material.STONE, "§7Common", itemManager.getCommonPercent()));
     }
 
     private ItemStack filler() {
@@ -123,6 +124,11 @@ public class AdminConfigMenu implements InventoryHolder {
                 .get(ACTION_KEY, PersistentDataType.STRING);
 
         if (action == null) return;
+
+        if (action.equals("back")) {
+            new AdminHubMenu(clicker, itemManager, hudManager).open();
+            return;
+        }
 
         String[] parts = action.split(":");
         if (parts.length != 2) return;

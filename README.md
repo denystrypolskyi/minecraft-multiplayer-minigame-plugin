@@ -30,14 +30,21 @@ The main command is `/pillars`. The shorter alias `/p` is also available.
 | --- | --- |
 | `/p menu` | Opens the arena selection menu. |
 | `/p join <arena>` | Joins a specific arena by config key, for example `/p join arena4_1`. |
+| `/p quickjoin` | Joins the best available arena automatically. Alias: `/p joinactive`. |
 | `/p leave` | Leaves the current game. |
 | `/p forcestart` | Force starts the current game. Requires `pillars.forcestart`. |
+| `/p admin` | Opens the admin configuration menu. Requires `pillars.admin`. |
+| `/p itemadd <common\|rare\|legendary>` | Adds the held item to an item pool with a sensible default weight. Requires `pillars.admin`. |
+| `/p itemadd <common\|rare\|legendary> <weight>` | Advanced item-pool add command with an explicit weight. Requires `pillars.admin`. |
+| `/p itemremove <common\|rare\|legendary>` | Disables the held item in an item pool. Requires `pillars.admin`. |
+| `/p itemremove <common\|rare\|legendary> <material>` | Advanced item-pool remove command by material name. Requires `pillars.admin`. |
 
 ## Permissions
 
 | Permission | Default | Description |
 | --- | --- | --- |
 | `pillars.forcestart` | `op` | Allows a player to use `/p forcestart`. |
+| `pillars.admin` | `op` | Allows a player to use `/p admin`, `/p itemadd`, and `/p itemremove`. |
 
 ## Configuration
 
@@ -47,13 +54,12 @@ The plugin creates and reads its settings from:
 plugins/PillarsPlugin/config.yml
 ```
 
-Most gameplay values can be configured in `config.yml`, including minimum players, countdowns, arena reset timing, border shrinking, item rarity, lobby world, arena worlds, spawn points, display names, and item cooldowns.
+Most gameplay values can be configured in `config.yml`, including countdowns, arena reset timing, border shrinking, item rarity, lobby world, arena worlds, spawn points, per-arena start thresholds, display names, and item cooldowns.
 
 ### Main Settings
 
 ```yaml
 settings:
-  minPlayers: 4
   beginCountdownSeconds: 5
   endGameLobbyCountdownSeconds: 5
   endGameSpectatorDelayTicks: 40
@@ -66,13 +72,12 @@ settings:
   witherEffectPeriodTicks: 40
   witherEffectAmplifier: 1
   itemRarity:
-    legendaryPercent: 5
-    rarePercent: 15
+    legendaryPercent: 6
+    rarePercent: 20
 ```
 
 | Setting | Description |
 | --- | --- |
-| `minPlayers` | Minimum number of players required before the game can start normally. |
 | `beginCountdownSeconds` | Countdown duration before a game begins. |
 | `endGameLobbyCountdownSeconds` | Countdown before players are sent back to the lobby after a game. |
 | `endGameSpectatorDelayTicks` | Delay before end-game spectator handling, in ticks. 20 ticks is about 1 second. |
@@ -85,7 +90,7 @@ settings:
 | `witherEffectPeriodTicks` | How often the wither effect is applied, in ticks. |
 | `witherEffectAmplifier` | Strength of the wither effect. |
 | `itemRarity.legendaryPercent` | Chance percentage for legendary items. |
-| `itemRarity.rarePercent` | Chance percentage for rare items. |
+| `itemRarity.rarePercent` | Chance percentage for rare items. Common item chance is the remaining percentage. |
 
 ### Arenas
 
@@ -103,6 +108,7 @@ arenas:
       - [6, 100, -6]
       - [6, 100, 6]
     displayName: "Arena 4 #1"
+    minPlayers: 2
     itemCooldownSeconds: 5
 ```
 
@@ -111,6 +117,7 @@ arenas:
 | `worldName` | Name of the world used for this arena. |
 | `spawnPoints` | Player spawn locations in `[x, y, z]` format. The number of spawn points controls the arena capacity. |
 | `displayName` | Name shown to players in menus and messages. |
+| `minPlayers` | Minimum players needed for this arena to start automatically. If missing, it defaults to half of the arena capacity. |
 | `itemCooldownSeconds` | Cooldown between item grants or item usage for that arena. |
 
 The default config includes:
@@ -122,6 +129,92 @@ The default config includes:
 | 12-player arenas | `arena12_1`, `arena12_2`, `arena12_3` | 12 |
 
 When adding a new arena, make sure the world exists on the server and that every spawn point is valid for that world.
+
+## Item Pools
+
+Item pools are configured in:
+
+```text
+plugins/PillarsPlugin/item-pools.yml
+```
+
+The default file is copied from:
+
+```text
+src/main/resources/item-pools.yml
+```
+
+Example:
+
+```yaml
+common:
+  STONE: 24
+  WOODEN_SWORD: 12
+rare:
+  ENDER_PEARL: 7
+  IRON_SWORD: 5
+legendary:
+  NETHERITE_SWORD: 1
+```
+
+Weights control how likely an item is within its rarity pool. Higher weights are more common. A weight of `0` disables the item.
+
+Rarity chances are controlled separately in `config.yml`:
+
+```yaml
+settings:
+  itemRarity:
+    legendaryPercent: 6
+    rarePercent: 20
+```
+
+With the default values, item rolls are 6% legendary, 20% rare, and 74% common.
+
+### Admin Item Editing
+
+Admins can use `/p admin` to open a configuration menu.
+
+The admin menu includes:
+
+| Menu | Description |
+| --- | --- |
+| Rarity Chances | Adjusts common, rare, and legendary drop percentages. |
+| Common Items | Adds or disables common pool items. |
+| Rare Items | Adds or disables rare pool items. |
+| Legendary Items | Adds or disables legendary pool items. |
+
+Inside an item pool menu:
+
+- Click `Add Held Item` to add or re-enable the item in your main hand.
+- Click an existing item icon to disable it from that pool.
+- Use the back button to return to the admin hub.
+
+Commands are also available for quick edits:
+
+```text
+/p itemadd rare
+/p itemadd rare 8
+/p itemremove rare
+/p itemremove rare ENDER_PEARL
+```
+
+Default item weights used by `/p itemadd <rarity>`:
+
+| Rarity | Default Weight |
+| --- | --- |
+| common | 10 |
+| rare | 5 |
+| legendary | 1 |
+
+## HUD And Messages
+
+Players receive clear feedback throughout the game:
+
+- Waiting lobbies show an action bar with current player count and how many more players are needed.
+- The sidebar HUD shows the arena status: waiting for players, starting, in progress, ending, or resetting.
+- During the game, the action bar shows item delivery time, current zone size, and time until the zone decreases by one block.
+- Arena join messages are local to players in that arena.
+- Force-start, normal game start, and winner messages are broadcast globally.
 
 ## Player Stats
 
@@ -171,12 +264,12 @@ The plugin creates `stats.json` if it does not already exist.
 src/main/java/org/example/pillars
   command/       Command handling for /pillars and /p
   entities/      Arena and player stat models
-  gui/           Arena menu GUI
-  items/         Common, rare, and legendary items
+  gui/           Arena and admin menu GUIs
   listeners/    Bukkit event listeners
   managers/     Game, arena, player, stats, HUD, item, spawn, sound, and teleport logic
 
 src/main/resources
   config.yml     Default plugin configuration
+  item-pools.yml Default common, rare, and legendary item pools
   plugin.yml     Plugin metadata, commands, aliases, and permissions
 ```

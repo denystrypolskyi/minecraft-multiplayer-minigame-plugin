@@ -9,7 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.example.pillars.GameSession;
 import org.example.pillars.entities.Arena;
 import org.example.pillars.enums.GameState;
-import org.example.pillars.gui.AdminConfigMenu;
+import org.example.pillars.gui.AdminHubMenu;
 import org.example.pillars.gui.ArenaMenu;
 import org.example.pillars.managers.ArenaManager;
 import org.example.pillars.managers.GameSessionManager;
@@ -122,7 +122,7 @@ public class PillarsCommand implements CommandExecutor {
                     return true;
                 }
 
-                new AdminConfigMenu(player, itemManager, hudManager).open();
+                new AdminHubMenu(player, itemManager, hudManager).open();
             }
 
             case "itemadd" -> {
@@ -142,7 +142,12 @@ public class PillarsCommand implements CommandExecutor {
                     return true;
                 }
 
-                int weight = 10;
+                int weight = itemManager.getDefaultWeight(args[1]);
+                if (weight <= 0) {
+                    hudManager.sendItemAddUsage(player);
+                    return true;
+                }
+
                 if (args.length >= 3) {
                     try {
                         weight = Integer.parseInt(args[2]);
@@ -165,15 +170,25 @@ public class PillarsCommand implements CommandExecutor {
                     return true;
                 }
 
-                if (args.length < 3) {
+                if (args.length < 2) {
                     hudManager.sendItemRemoveUsage(player);
                     return true;
                 }
 
-                Material material = Material.matchMaterial(args[2]);
-                if (material == null) {
-                    hudManager.sendUnknownMaterial(player);
-                    return true;
+                Material material;
+                if (args.length >= 3) {
+                    material = Material.matchMaterial(args[2]);
+                    if (material == null) {
+                        hudManager.sendUnknownMaterial(player);
+                        return true;
+                    }
+                } else {
+                    ItemStack heldItem = player.getInventory().getItemInMainHand();
+                    if (heldItem.getType() == Material.AIR) {
+                        hudManager.sendHoldItemToConfigure(player);
+                        return true;
+                    }
+                    material = heldItem.getType();
                 }
 
                 if (itemManager.removeItem(args[1], material)) {
