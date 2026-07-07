@@ -10,6 +10,8 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.example.pillars.managers.ArenaManager;
+import org.example.pillars.managers.GameSessionManager;
 import org.example.pillars.managers.HudManager;
 import org.example.pillars.managers.ItemManager;
 
@@ -24,11 +26,15 @@ public class AdminConfigMenu implements InventoryHolder {
     private final Player player;
     private final ItemManager itemManager;
     private final HudManager hudManager;
+    private final ArenaManager arenaManager;
+    private final GameSessionManager gameSessionManager;
 
-    public AdminConfigMenu(Player player, ItemManager itemManager, HudManager hudManager) {
+    public AdminConfigMenu(Player player, ItemManager itemManager, HudManager hudManager, ArenaManager arenaManager, GameSessionManager gameSessionManager) {
         this.player = player;
         this.itemManager = itemManager;
         this.hudManager = hudManager;
+        this.arenaManager = arenaManager;
+        this.gameSessionManager = gameSessionManager;
         this.inventory = Bukkit.createInventory(this, MENU_SIZE, MENU_TITLE);
         buildMenu();
     }
@@ -126,7 +132,7 @@ public class AdminConfigMenu implements InventoryHolder {
         if (action == null) return;
 
         if (action.equals("back")) {
-            new AdminHubMenu(clicker, itemManager, hudManager).open();
+            new AdminHubMenu(clicker, itemManager, hudManager, arenaManager, gameSessionManager).open();
             return;
         }
 

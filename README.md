@@ -108,6 +108,7 @@ arenas:
       - [6, 100, -6]
       - [6, 100, 6]
     displayName: "Arena 4 #1"
+    joiningOpen: true
     minPlayers: 2
     itemCooldownSeconds: 5
 ```
@@ -117,6 +118,7 @@ arenas:
 | `worldName` | Name of the world used for this arena. |
 | `spawnPoints` | Player spawn locations in `[x, y, z]` format. The number of spawn points controls the arena capacity. |
 | `displayName` | Name shown to players in menus and messages. |
+| `joiningOpen` | Whether players can join this arena. Admins can toggle this safely from `/p admin`. |
 | `minPlayers` | Minimum players needed for this arena to start automatically. If missing, it defaults to half of the arena capacity. |
 | `itemCooldownSeconds` | Cooldown between item grants or item usage for that arena. |
 
@@ -178,15 +180,35 @@ The admin menu includes:
 
 | Menu | Description |
 | --- | --- |
+| Arena Settings | Safely adjusts existing arena minimum players and item cooldowns. |
 | Rarity Chances | Adjusts common, rare, and legendary drop percentages. |
 | Common Items | Adds or disables common pool items. |
 | Rare Items | Adds or disables rare pool items. |
 | Legendary Items | Adds or disables legendary pool items. |
 
+Arena settings only expose safe numeric options:
+
+| Setting | Description |
+| --- | --- |
+| Min Players | Minimum players needed for that arena to start automatically. Clamped between 1 and arena capacity. |
+| Item Cooldown | Seconds between item grants in that arena. Minimum 1 second. |
+| Joining Open/Closed | Controls whether players can join that arena. Existing players are not kicked. |
+
+Changes from the arena settings menu are saved immediately to `config.yml`.
+
+The arena panel also has runtime-safe controls:
+
+- View current arena status and player count.
+- Join a running arena as an admin spectator.
+- Close or reopen joining for testing.
+
+Admin spectating does not add the admin as a player. Use `/p leave` to return to the previous location and game mode.
+
 Inside an item pool menu:
 
 - Click `Add Held Item` to add or re-enable the item in your main hand.
 - Click an existing item icon to disable it from that pool.
+- Use previous and next page buttons when a pool has more items than fit on one screen.
 - Use the back button to return to the admin hub.
 
 Commands are also available for quick edits:

@@ -102,9 +102,7 @@ public class PillarsCommand implements CommandExecutor {
                     return true;
                 }
 
-                if (session.forceStart(player)) {
-                    hudManager.sendForceStartSuccess(player);
-                }
+                session.forceStart(player);
             }
 
             case "menu" -> {
@@ -122,7 +120,7 @@ public class PillarsCommand implements CommandExecutor {
                     return true;
                 }
 
-                new AdminHubMenu(player, itemManager, hudManager).open();
+                new AdminHubMenu(player, itemManager, hudManager, arenaManager, gameSessionManager).open();
             }
 
             case "itemadd" -> {

@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.*;
+import org.example.pillars.entities.Arena;
 import org.example.pillars.enums.GameState;
 import org.jetbrains.annotations.NotNull;
 
@@ -225,8 +226,8 @@ public class HudManager {
         player.sendMessage("§cThe game is already running.");
     }
 
-    public void sendForceStartSuccess(Player player) {
-        player.sendMessage("§aThe game has been force-started!");
+    public void sendArenaClosed(Player player, String arenaName) {
+        player.sendMessage("§c" + arenaName + " is currently closed for joining.");
     }
 
     public void sendPlayerJoinedArena(Set<UUID> recipients, Player player, String arenaName, int currentPlayers, int maxPlayers) {
@@ -302,6 +303,30 @@ public class HudManager {
 
     public void sendAdminConfigUpdated(Player player, int commonPercent, int rarePercent, int legendaryPercent) {
         player.sendMessage("§6§lPILLARS §8» §aRarity updated: §7Common §f" + commonPercent + "% §8| §bRare §f" + rarePercent + "% §8| §6Legendary §f" + legendaryPercent + "%");
+    }
+
+    public void sendArenaSettingsUpdated(Player player, Arena arena) {
+        player.sendMessage("§6§lPILLARS §8» §aSaved §e" + arena.getDisplayName()
+                + "§a: min players §f" + arena.getMinPlayers()
+                + "§a, item cooldown §f" + arena.getItemCooldownSeconds() + "s§a.");
+    }
+
+    public void broadcastArenaJoiningChanged(Player player, Arena arena) {
+        Bukkit.broadcastMessage("§6§lPILLARS §8» §e" + arena.getDisplayName()
+                + (arena.isJoiningOpen() ? " §awas opened for joining" : " §cwas closed for joining")
+                + " §7by §f" + player.getName() + "§7.");
+    }
+
+    public void sendArenaSpectateUnavailable(Player player) {
+        player.sendMessage("§cYou can only spectate arenas while a game is in progress.");
+    }
+
+    public void sendCannotSpectateOwnGame(Player player) {
+        player.sendMessage("§cYou cannot use admin spectate while playing in that arena.");
+    }
+
+    public void sendAdminSpectatorJoined(Player player, String arenaName) {
+        player.sendMessage("§6§lPILLARS §8» §aNow spectating §e" + arenaName + "§a. Use §f/p leave §ato return.");
     }
 
     public void sendNoSpawnAvailable(Player player) {

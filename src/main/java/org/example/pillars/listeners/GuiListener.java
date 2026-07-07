@@ -4,6 +4,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.example.pillars.gui.AdminArenaListMenu;
+import org.example.pillars.gui.AdminArenaSettingsMenu;
 import org.example.pillars.gui.AdminConfigMenu;
 import org.example.pillars.gui.AdminHubMenu;
 import org.example.pillars.gui.AdminItemPoolMenu;
@@ -21,6 +23,12 @@ public class GuiListener implements Listener {
             menu.handleClick(event);
         } else if (AdminHubMenu.isAdminHubMenu(event.getClickedInventory())) {
             AdminHubMenu menu = (AdminHubMenu) event.getClickedInventory().getHolder();
+            menu.handleClick(event);
+        } else if (AdminArenaListMenu.isAdminArenaListMenu(event.getClickedInventory())) {
+            AdminArenaListMenu menu = (AdminArenaListMenu) event.getClickedInventory().getHolder();
+            menu.handleClick(event);
+        } else if (AdminArenaSettingsMenu.isAdminArenaSettingsMenu(event.getClickedInventory())) {
+            AdminArenaSettingsMenu menu = (AdminArenaSettingsMenu) event.getClickedInventory().getHolder();
             menu.handleClick(event);
         } else if (AdminConfigMenu.isAdminConfigMenu(event.getClickedInventory())) {
             AdminConfigMenu menu = (AdminConfigMenu) event.getClickedInventory().getHolder();

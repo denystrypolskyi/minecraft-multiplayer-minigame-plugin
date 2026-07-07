@@ -5,14 +5,20 @@ import org.bukkit.Location;
 import java.util.List;
 
 public class Arena {
+    private String configKey;
     private String worldName;
     private String displayName;
     private int itemCooldownSeconds;
     private int minPlayers;
+    private boolean joiningOpen = true;
     private List<Location> spawnPoints;
 
     public String getWorldName() {
         return worldName;
+    }
+
+    public String getConfigKey() {
+        return configKey;
     }
 
     public String getDisplayName() {
@@ -31,8 +37,16 @@ public class Arena {
         return spawnPoints;
     }
 
+    public boolean isJoiningOpen() {
+        return joiningOpen;
+    }
+
     public void setWorldName(String worldName) {
         this.worldName = worldName;
+    }
+
+    public void setConfigKey(String configKey) {
+        this.configKey = configKey;
     }
 
     public void setDisplayName(String displayName) {
@@ -45,6 +59,10 @@ public class Arena {
 
     public void setMinPlayers(int minPlayers) {
         this.minPlayers = minPlayers;
+    }
+
+    public void setJoiningOpen(boolean joiningOpen) {
+        this.joiningOpen = joiningOpen;
     }
 
     public void setSpawnPoints(List<Location> spawnPoints) {

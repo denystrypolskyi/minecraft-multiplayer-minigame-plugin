@@ -89,8 +89,10 @@ public class ArenaManager {
             world.setTime(6000);
 
             Arena arena = new Arena();
+            arena.setConfigKey(key);
             arena.setWorldName(worldName);
             arena.setDisplayName(sec.getString("displayName", worldName));
+            arena.setJoiningOpen(sec.getBoolean("joiningOpen", true));
             arena.setItemCooldownSeconds(sec.getInt("itemCooldownSeconds", 0));
 
             List<Location> spawns = new ArrayList<>();
@@ -226,6 +228,65 @@ public class ArenaManager {
 
     public Collection<Arena> getArenas() {
         return arenas.values();
+    }
+
+    public void updateSafeArenaSettings(Arena arena, int minPlayers, int itemCooldownSeconds) {
+        if (arena == null || arena.getSpawnPoints() == null || arena.getSpawnPoints().isEmpty()) {
+            return;
+        }
+
+        int clampedMinPlayers = Math.max(1, Math.min(arena.getSpawnPoints().size(), minPlayers));
+        int clampedItemCooldownSeconds = Math.max(1, itemCooldownSeconds);
+
+        arena.setMinPlayers(clampedMinPlayers);
+        arena.setItemCooldownSeconds(clampedItemCooldownSeconds);
+
+        String configKey = getConfigKey(arena);
+        if (configKey == null) {
+            plugin.getLogger().warning("Could not save arena settings for " + arena.getWorldName() + "; config key not found.");
+            return;
+        }
+
+        plugin.getConfig().set("arenas." + configKey + ".minPlayers", clampedMinPlayers);
+        plugin.getConfig().set("arenas." + configKey + ".itemCooldownSeconds", clampedItemCooldownSeconds);
+        plugin.saveConfig();
+    }
+
+    public void updateArenaJoiningOpen(Arena arena, boolean joiningOpen) {
+        if (arena == null) {
+            return;
+        }
+
+        arena.setJoiningOpen(joiningOpen);
+
+        String configKey = getConfigKey(arena);
+        if (configKey == null) {
+            plugin.getLogger().warning("Could not save joining state for " + arena.getWorldName() + "; config key not found.");
+            return;
+        }
+
+        plugin.getConfig().set("arenas." + configKey + ".joiningOpen", joiningOpen);
+        plugin.saveConfig();
+    }
+
+    private String getConfigKey(Arena arena) {
+        if (arena.getConfigKey() != null && !arena.getConfigKey().isEmpty()) {
+            return arena.getConfigKey();
+        }
+
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection("arenas");
+        if (section == null) {
+            return null;
+        }
+
+        for (String key : section.getKeys(false)) {
+            if (arena.getWorldName().equals(section.getString(key + ".worldName"))) {
+                arena.setConfigKey(key);
+                return key;
+            }
+        }
+
+        return null;
     }
 
     public Arena getArenaByDisplayName(String displayName) {

@@ -10,6 +10,8 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.example.pillars.managers.ArenaManager;
+import org.example.pillars.managers.GameSessionManager;
 import org.example.pillars.managers.HudManager;
 import org.example.pillars.managers.ItemManager;
 
@@ -24,11 +26,15 @@ public class AdminHubMenu implements InventoryHolder {
     private final Player player;
     private final ItemManager itemManager;
     private final HudManager hudManager;
+    private final ArenaManager arenaManager;
+    private final GameSessionManager gameSessionManager;
 
-    public AdminHubMenu(Player player, ItemManager itemManager, HudManager hudManager) {
+    public AdminHubMenu(Player player, ItemManager itemManager, HudManager hudManager, ArenaManager arenaManager, GameSessionManager gameSessionManager) {
         this.player = player;
         this.itemManager = itemManager;
         this.hudManager = hudManager;
+        this.arenaManager = arenaManager;
+        this.gameSessionManager = gameSessionManager;
         this.inventory = Bukkit.createInventory(this, MENU_SIZE, MENU_TITLE);
         buildMenu();
     }
@@ -38,6 +44,12 @@ public class AdminHubMenu implements InventoryHolder {
             inventory.setItem(i, filler());
         }
 
+        inventory.setItem(4, actionItem(
+                Material.MAP,
+                "§eArena Settings",
+                List.of("§7Edit safe numeric arena settings."),
+                "arenas"
+        ));
         inventory.setItem(10, actionItem(
                 Material.COMPARATOR,
                 "§6Rarity Chances",
@@ -109,12 +121,17 @@ public class AdminHubMenu implements InventoryHolder {
         if (action == null) return;
 
         if (action.equals("rarity")) {
-            new AdminConfigMenu(clicker, itemManager, hudManager).open();
+            new AdminConfigMenu(clicker, itemManager, hudManager, arenaManager, gameSessionManager).open();
+            return;
+        }
+
+        if (action.equals("arenas")) {
+            new AdminArenaListMenu(clicker, arenaManager, gameSessionManager, itemManager, hudManager).open();
             return;
         }
 
         if (action.startsWith("pool:")) {
-            new AdminItemPoolMenu(clicker, itemManager, hudManager, action.substring("pool:".length())).open();
+            new AdminItemPoolMenu(clicker, arenaManager, gameSessionManager, itemManager, hudManager, action.substring("pool:".length())).open();
         }
     }
 

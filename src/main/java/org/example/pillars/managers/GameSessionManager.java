@@ -81,6 +81,25 @@ public class GameSessionManager {
         target.playerJoin(player);
     }
 
+    public boolean spectateSession(Player player, Arena arena) {
+        GameSession current = getSessionByPlayer(player);
+        if (current != null) {
+            current.playerLeave(player);
+        }
+
+        GameSession target = getSession(arena);
+        if (target == null) {
+            hudManager.sendArenaSpectateUnavailable(player);
+            return false;
+        }
+
+        return target.adminSpectate(player);
+    }
+
+    public void setArenaJoiningOpen(Arena arena, boolean joiningOpen) {
+        arenaManager.updateArenaJoiningOpen(arena, joiningOpen);
+    }
+
     public void leaveSession(Player player) {
 
         GameSession session = getSessionByPlayer(player);
@@ -132,6 +151,10 @@ public class GameSessionManager {
     }
 
     private boolean isJoinableSessionWithPlayers(GameSession session) {
+        if (!session.getArena().isJoiningOpen()) {
+            return false;
+        }
+
         if (session.getState() != GameState.WAITING && session.getState() != GameState.STARTING) {
             return false;
         }
@@ -154,10 +177,11 @@ public class GameSessionManager {
 
         GameSession session = getSession(arena);
         if (session == null) {
-            return true;
+            return arena.isJoiningOpen();
         }
 
-        return session.getState() == GameState.WAITING
+        return arena.isJoiningOpen()
+                && session.getState() == GameState.WAITING
                 && session.getActivePlayerIds().size() < arena.getSpawnPoints().size();
     }
 }

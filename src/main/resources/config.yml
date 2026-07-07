@@ -24,6 +24,7 @@ arenas:
       - [6, 100, -6]
       - [6, 100, 6]
     displayName: "Arena 4 #1"
+    joiningOpen: true
     minPlayers: 2
     itemCooldownSeconds: 5
 
@@ -35,6 +36,7 @@ arenas:
       - [0, 100, -6]
       - [0, 100, 6]
     displayName: "Arena 4 #2"
+    joiningOpen: true
     minPlayers: 2
     itemCooldownSeconds: 5
 
@@ -46,6 +48,7 @@ arenas:
       - [-6, 100, 6]
       - [6, 100, 6]
     displayName: "Arena 4 #3"
+    joiningOpen: true
     minPlayers: 2
     itemCooldownSeconds: 5
 
@@ -62,6 +65,7 @@ arenas:
       - [0, 100, -14]
       - [9.9, 100, -9.9]
     displayName: "Arena 8 #1"
+    joiningOpen: true
     minPlayers: 4
     itemCooldownSeconds: 2
 
@@ -77,6 +81,7 @@ arenas:
       - [-9.9, 100, -9.9]
       - [9.9, 100, -9.9]
     displayName: "Arena 8 #2"
+    joiningOpen: true
     minPlayers: 4
     itemCooldownSeconds: 2
 
@@ -92,6 +97,7 @@ arenas:
       - [-9.9, 100, 9.9]
       - [-9.9, 100, -9.9]
     displayName: "Arena 8 #3"
+    joiningOpen: true
     minPlayers: 4
     itemCooldownSeconds: 2
 
@@ -112,6 +118,7 @@ arenas:
       - [9.0, 100, -15.59]
       - [15.59, 100, -9.0]
     displayName: "Arena 12 #1"
+    joiningOpen: true
     minPlayers: 6
     itemCooldownSeconds: 2
 
@@ -131,6 +138,7 @@ arenas:
       - [9.0, 100, -15.59]
       - [15.59, 100, -9.0]
     displayName: "Arena 12 #2"
+    joiningOpen: true
     minPlayers: 6
     itemCooldownSeconds: 2
 
@@ -150,5 +158,6 @@ arenas:
       - [9.0, 100, -15.59]
       - [15.59, 100, -9.0]
     displayName: "Arena 12 #3"
+    joiningOpen: true
     minPlayers: 6
     itemCooldownSeconds: 2

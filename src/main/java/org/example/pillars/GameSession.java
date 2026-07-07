@@ -17,9 +17,12 @@ public class GameSession {
 
     private final Set<UUID> activePlayers = new HashSet<>();
     private final Set<UUID> spectators = new HashSet<>();
+    private final Set<UUID> adminSpectators = new HashSet<>();
     private final Map<UUID, Location> frozenPlayers = new HashMap<>();
     private final Map<UUID, UUID> lastDamagerMap = new HashMap<>();
     private final Map<UUID, Location> occupiedSpawns = new HashMap<>();
+    private final Map<UUID, Location> adminSpectatorPreviousLocations = new HashMap<>();
+    private final Map<UUID, GameMode> adminSpectatorPreviousGameModes = new HashMap<>();
 
     private final HudManager hudManager;
     private final PlayerManager playerManager;
@@ -48,7 +51,6 @@ public class GameSession {
     private long borderShrinkEndTimeMillis = -1L;
     private double borderShrinkBlocksPerSecond = 0.0;
 
-    private final int minPlayers;
     private final int beginCountdownSeconds;
     private final int endGameLobbyCountdownSeconds;
     private final long endGameSpectatorDelayTicks;
@@ -84,7 +86,6 @@ public class GameSession {
         this.arenaManager = arenaManager;
         this.arena = arena;
 
-        this.minPlayers = Math.max(1, arena.getMinPlayers());
         this.beginCountdownSeconds = Math.max(1, plugin.getConfig().getInt("settings.beginCountdownSeconds", 5));
         this.endGameLobbyCountdownSeconds = Math.max(1, plugin.getConfig().getInt("settings.endGameLobbyCountdownSeconds", 5));
         this.endGameSpectatorDelayTicks = Math.max(0L, plugin.getConfig().getLong("settings.endGameSpectatorDelayTicks", 40L));
@@ -102,6 +103,8 @@ public class GameSession {
         if (!canJoin()) {
             if (arena.getSpawnPoints() == null || arena.getSpawnPoints().isEmpty()) {
                 hudManager.sendArenaConfigurationError(player);
+            } else if (!arena.isJoiningOpen()) {
+                hudManager.sendArenaClosed(player, arena.getDisplayName());
             } else if (activePlayers.size() >= arena.getSpawnPoints().size()) {
                 hudManager.sendNoSpawnAvailable(player);
             } else {
@@ -120,8 +123,8 @@ public class GameSession {
 
         updateArenaHudForAllPlayers();
 
-        hudManager.updatePlayerScoreboard(player, getAllPlayerIds().size(), arena.getSpawnPoints().size(), state, arena.getDisplayName(), statsManager.getStats(player.getUniqueId()).getKills(), statsManager.getStats(player.getUniqueId()).getWins());
-        if (state == GameState.WAITING && activePlayers.size() < minPlayers) {
+        hudManager.updatePlayerScoreboard(player, getArenaPlayerCount(), arena.getSpawnPoints().size(), state, arena.getDisplayName(), statsManager.getStats(player.getUniqueId()).getKills(), statsManager.getStats(player.getUniqueId()).getWins());
+        if (state == GameState.WAITING && activePlayers.size() < getMinPlayers()) {
             startWaitingForPlayersTask();
         }
         startBeginGameCountdown();
@@ -132,6 +135,18 @@ public class GameSession {
 
         BukkitTask task = endGameCountdownTasks.remove(uuid);
         if (task != null) task.cancel();
+
+        if (adminSpectators.contains(uuid)) {
+            if (isDisconnect) {
+                adminSpectators.remove(uuid);
+                adminSpectatorPreviousLocations.remove(uuid);
+                adminSpectatorPreviousGameModes.remove(uuid);
+            } else {
+                restoreAdminSpectator(player);
+            }
+            updateArenaHudForAllPlayers();
+            return;
+        }
 
         boolean wasActive = activePlayers.contains(uuid);
 
@@ -145,7 +160,7 @@ public class GameSession {
             Location spawn = occupiedSpawns.remove(uuid);
             spawnManager.cleanupSpawn(spawn);
 
-            if (state == GameState.STARTING && activePlayers.size() < minPlayers) {
+            if (state == GameState.STARTING && activePlayers.size() < getMinPlayers()) {
                 state = GameState.WAITING;
                 forceStart = false;
                 updateArenaHudForAllPlayers();
@@ -173,6 +188,27 @@ public class GameSession {
 
     public void playerDisconnect(Player player) {
         removePlayer(player, true);
+    }
+
+    public boolean adminSpectate(Player player) {
+        if (state != GameState.RUNNING) {
+            hudManager.sendArenaSpectateUnavailable(player);
+            return false;
+        }
+
+        if (activePlayers.contains(player.getUniqueId())) {
+            hudManager.sendCannotSpectateOwnGame(player);
+            return false;
+        }
+
+        adminSpectators.add(player.getUniqueId());
+        adminSpectatorPreviousLocations.put(player.getUniqueId(), player.getLocation());
+        adminSpectatorPreviousGameModes.put(player.getUniqueId(), player.getGameMode());
+        player.setGameMode(GameMode.SPECTATOR);
+        player.teleport(arena.getSpectatorCenter());
+        updateArenaHudForAllPlayers();
+        hudManager.sendAdminSpectatorJoined(player, arena.getDisplayName());
+        return true;
     }
 
 
@@ -218,6 +254,7 @@ public class GameSession {
 
         Set<UUID> allPlayersSnapshot = new HashSet<>(activePlayers);
         allPlayersSnapshot.addAll(spectators);
+        restoreAdminSpectators();
 
         for (UUID uuid : new ArrayList<>(activePlayers)) {
             Player player = Bukkit.getPlayer(uuid);
@@ -383,6 +420,10 @@ public class GameSession {
         frozenPlayers.clear();
         activePlayers.clear();
         spectators.clear();
+        restoreAdminSpectators();
+        adminSpectators.clear();
+        adminSpectatorPreviousLocations.clear();
+        adminSpectatorPreviousGameModes.clear();
         lastDamagerMap.clear();
         endGameCountdownTasks.clear();
         occupiedSpawns.clear();
@@ -407,6 +448,7 @@ public class GameSession {
         return state != GameState.RUNNING
                 && state != GameState.RESETTING
                 && state != GameState.ENDING
+                && arena.isJoiningOpen()
                 && arena.getSpawnPoints() != null
                 && activePlayers.size() < arena.getSpawnPoints().size();
     }
@@ -418,6 +460,7 @@ public class GameSession {
     public Set<UUID> getAllPlayerIds() {
         Set<UUID> all = new HashSet<>(activePlayers);
         all.addAll(spectators);
+        all.addAll(adminSpectators);
         return Collections.unmodifiableSet(all);
     }
 
@@ -456,16 +499,20 @@ public class GameSession {
     private void updateArenaHudForAllPlayers() {
         hudManager.updateArenaInfoForAllPlayers(
                 getAllPlayerIds(),
-                getAllPlayerIds().size(),
+                getArenaPlayerCount(),
                 arena.getSpawnPoints().size(),
                 state,
                 arena.getDisplayName()
         );
     }
 
+    private int getArenaPlayerCount() {
+        return activePlayers.size() + spectators.size();
+    }
+
     public void startBeginGameCountdown() {
         if (state != GameState.WAITING) return;
-        if ((activePlayers.size() < minPlayers && !forceStart) || beginGameCountdownTask != null) return;
+        if ((activePlayers.size() < getMinPlayers() && !forceStart) || beginGameCountdownTask != null) return;
 
         state = GameState.STARTING;
         cancelWaitingForPlayersTask();
@@ -478,7 +525,7 @@ public class GameSession {
                 return;
             }
 
-            if (!forceStart && activePlayers.size() < minPlayers) {
+            if (!forceStart && activePlayers.size() < getMinPlayers()) {
                 cancelBeginGameCountdownTask();
                 state = GameState.WAITING;
                 updateArenaHudForAllPlayers();
@@ -571,10 +618,43 @@ public class GameSession {
             for (UUID uuid : activePlayers) {
                 Player player = Bukkit.getPlayer(uuid);
                 if (player != null) {
-                    hudManager.sendWaitingForPlayers(player, activePlayers.size(), minPlayers);
+                    hudManager.sendWaitingForPlayers(player, activePlayers.size(), getMinPlayers());
                 }
             }
         }, 0L, 20L);
+    }
+
+    private int getMinPlayers() {
+        return Math.max(1, arena.getMinPlayers());
+    }
+
+    private void restoreAdminSpectators() {
+        for (UUID uuid : new HashSet<>(adminSpectators)) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                restoreAdminSpectator(player);
+            }
+        }
+    }
+
+    private void restoreAdminSpectator(Player player) {
+        UUID uuid = player.getUniqueId();
+        adminSpectators.remove(uuid);
+
+        Location previousLocation = adminSpectatorPreviousLocations.remove(uuid);
+        GameMode previousGameMode = adminSpectatorPreviousGameModes.remove(uuid);
+
+        if (previousGameMode != null) {
+            player.setGameMode(previousGameMode);
+        } else {
+            player.setGameMode(GameMode.SURVIVAL);
+        }
+
+        if (previousLocation != null) {
+            player.teleport(previousLocation);
+        }
+
+        hudManager.resetScoreboard(player);
     }
 
 

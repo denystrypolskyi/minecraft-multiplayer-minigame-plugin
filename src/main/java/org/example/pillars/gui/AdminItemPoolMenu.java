@@ -10,6 +10,8 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.example.pillars.managers.ArenaManager;
+import org.example.pillars.managers.GameSessionManager;
 import org.example.pillars.managers.HudManager;
 import org.example.pillars.managers.ItemManager;
 
@@ -24,15 +26,25 @@ public class AdminItemPoolMenu implements InventoryHolder {
 
     private final Inventory inventory;
     private final Player player;
+    private final ArenaManager arenaManager;
+    private final GameSessionManager gameSessionManager;
     private final ItemManager itemManager;
     private final HudManager hudManager;
     private final String rarity;
+    private final int page;
 
-    public AdminItemPoolMenu(Player player, ItemManager itemManager, HudManager hudManager, String rarity) {
+    public AdminItemPoolMenu(Player player, ArenaManager arenaManager, GameSessionManager gameSessionManager, ItemManager itemManager, HudManager hudManager, String rarity) {
+        this(player, arenaManager, gameSessionManager, itemManager, hudManager, rarity, 0);
+    }
+
+    public AdminItemPoolMenu(Player player, ArenaManager arenaManager, GameSessionManager gameSessionManager, ItemManager itemManager, HudManager hudManager, String rarity, int page) {
         this.player = player;
+        this.arenaManager = arenaManager;
+        this.gameSessionManager = gameSessionManager;
         this.itemManager = itemManager;
         this.hudManager = hudManager;
         this.rarity = rarity.toLowerCase();
+        this.page = Math.max(0, page);
         this.inventory = Bukkit.createInventory(this, MENU_SIZE, "§4Items: §f" + this.rarity);
         buildMenu();
     }
@@ -49,15 +61,28 @@ public class AdminItemPoolMenu implements InventoryHolder {
                 "§7using the default weight for this rarity."
         ), "add_held"));
 
-        int slot = 9;
-        for (Map.Entry<Material, Integer> entry : itemManager.getItemPool(rarity).entrySet().stream()
+        List<Map.Entry<Material, Integer>> entries = itemManager.getItemPool(rarity).entrySet().stream()
                 .sorted(Comparator.comparing(e -> e.getKey().name()))
-                .toList()) {
-            if (slot >= MENU_SIZE) {
-                break;
-            }
+                .toList();
+        int pageSize = MENU_SIZE - 18;
+        int maxPage = Math.max(0, (entries.size() - 1) / pageSize);
+        int currentPage = Math.min(page, maxPage);
+        int startIndex = currentPage * pageSize;
+        int endIndex = Math.min(entries.size(), startIndex + pageSize);
 
+        int slot = 9;
+        for (Map.Entry<Material, Integer> entry : entries.subList(startIndex, endIndex)) {
             inventory.setItem(slot++, poolItem(entry.getKey(), entry.getValue()));
+        }
+
+        if (currentPage > 0) {
+            inventory.setItem(45, actionItem(Material.ARROW, "§ePrevious Page", List.of("§7Page " + currentPage + " of " + (maxPage + 1)), "page:" + (currentPage - 1)));
+        }
+
+        inventory.setItem(49, pageItem(currentPage, maxPage));
+
+        if (currentPage < maxPage) {
+            inventory.setItem(53, actionItem(Material.ARROW, "§eNext Page", List.of("§7Page " + (currentPage + 2) + " of " + (maxPage + 1)), "page:" + (currentPage + 1)));
         }
     }
 
@@ -113,6 +138,17 @@ public class AdminItemPoolMenu implements InventoryHolder {
         return item;
     }
 
+    private ItemStack pageItem(int currentPage, int maxPage) {
+        ItemStack item = new ItemStack(Material.PAPER);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName("§fPage " + (currentPage + 1) + "§7/§f" + (maxPage + 1));
+            meta.setLore(List.of("§7" + itemManager.getItemPool(rarity).size() + " enabled items"));
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
     public void open() {
         player.openInventory(inventory);
     }
@@ -134,11 +170,22 @@ public class AdminItemPoolMenu implements InventoryHolder {
         if (action == null) return;
 
         switch (action) {
-            case "back" -> new AdminHubMenu(clicker, itemManager, hudManager).open();
+            case "back" -> new AdminHubMenu(clicker, itemManager, hudManager, arenaManager, gameSessionManager).open();
             case "add_held" -> addHeldItem(clicker);
             case "remove" -> removeItem(clicker, meta);
             default -> {
+                if (action.startsWith("page:")) {
+                    openPage(clicker, action);
+                }
             }
+        }
+    }
+
+    private void openPage(Player clicker, String action) {
+        try {
+            int targetPage = Integer.parseInt(action.substring("page:".length()));
+            new AdminItemPoolMenu(clicker, arenaManager, gameSessionManager, itemManager, hudManager, rarity, targetPage).open();
+        } catch (NumberFormatException ignored) {
         }
     }
 
@@ -151,7 +198,7 @@ public class AdminItemPoolMenu implements InventoryHolder {
 
         if (itemManager.addItemWithDefaultWeight(rarity, heldItem.getType())) {
             hudManager.sendItemConfigured(clicker, heldItem.getType(), rarity, itemManager.getDefaultWeight(rarity));
-            buildMenu();
+            new AdminItemPoolMenu(clicker, arenaManager, gameSessionManager, itemManager, hudManager, rarity, page).open();
         }
     }
 
@@ -165,7 +212,7 @@ public class AdminItemPoolMenu implements InventoryHolder {
 
         if (itemManager.removeItem(rarity, material)) {
             hudManager.sendItemRemoved(clicker, material, rarity);
-            buildMenu();
+            new AdminItemPoolMenu(clicker, arenaManager, gameSessionManager, itemManager, hudManager, rarity, page).open();
         }
     }
 
