@@ -74,6 +74,7 @@ settings:
   itemRarity:
     legendaryPercent: 6
     rarePercent: 20
+    antiRepeatHistorySize: 4
 ```
 
 | Setting | Description |
@@ -91,6 +92,7 @@ settings:
 | `witherEffectAmplifier` | Strength of the wither effect. |
 | `itemRarity.legendaryPercent` | Chance percentage for legendary items. |
 | `itemRarity.rarePercent` | Chance percentage for rare items. Common item chance is the remaining percentage. |
+| `itemRarity.antiRepeatHistorySize` | Number of recent items remembered per player so rolls avoid giving the same player repeated items. |
 
 ### Arenas
 
@@ -168,9 +170,10 @@ settings:
   itemRarity:
     legendaryPercent: 6
     rarePercent: 20
+    antiRepeatHistorySize: 4
 ```
 
-With the default values, item rolls are 6% legendary, 20% rare, and 74% common.
+With the default values, item rolls are 6% legendary, 20% rare, and 74% common. The anti-repeat setting makes the roller retry a few times if a player would receive one of their recent items again.
 
 ### Admin Item Editing
 

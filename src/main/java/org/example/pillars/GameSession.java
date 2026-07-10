@@ -154,6 +154,7 @@ public class GameSession {
 
         activePlayers.remove(uuid);
         spectators.remove(uuid);
+        itemManager.clearRecentItems(List.of(uuid));
         lastDamagerMap.remove(uuid);
 
         if (state == GameState.WAITING || state == GameState.STARTING) {
@@ -359,6 +360,7 @@ public class GameSession {
 
         activePlayers.remove(uuid);
         spectators.add(uuid);
+        itemManager.clearRecentItems(List.of(uuid));
 
         frozenPlayers.remove(uuid);
         lastDamagerMap.remove(uuid);
@@ -417,6 +419,7 @@ public class GameSession {
 
 
     private void clearSessionState() {
+        itemManager.clearRecentItems(getAllPlayerIds());
         frozenPlayers.clear();
         activePlayers.clear();
         spectators.clear();

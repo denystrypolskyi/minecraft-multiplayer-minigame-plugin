@@ -8,10 +8,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Deque;
 import java.util.Random;
+import java.util.UUID;
 
 public class ItemManager {
     private final Random random = new Random();
@@ -19,9 +22,11 @@ public class ItemManager {
     private final File itemPoolsFile;
     private int legendaryPercent;
     private int rarePercent;
+    private int antiRepeatHistorySize;
     private Map<Material, Integer> commonItems;
     private Map<Material, Integer> rareItems;
     private Map<Material, Integer> legendaryItems;
+    private final Map<UUID, Deque<Material>> recentPlayerItems = new HashMap<>();
 
     public ItemManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -34,6 +39,7 @@ public class ItemManager {
     public void reloadConfigValues() {
         this.legendaryPercent = Math.max(0, Math.min(100, plugin.getConfig().getInt("settings.itemRarity.legendaryPercent", 5)));
         this.rarePercent = Math.max(0, Math.min(100 - legendaryPercent, plugin.getConfig().getInt("settings.itemRarity.rarePercent", 15)));
+        this.antiRepeatHistorySize = Math.max(0, Math.min(12, plugin.getConfig().getInt("settings.itemRarity.antiRepeatHistorySize", 4)));
         YamlConfiguration itemPools = YamlConfiguration.loadConfiguration(itemPoolsFile);
         this.commonItems = loadItemPool(itemPools, "common");
         this.rareItems = loadItemPool(itemPools, "rare");
@@ -72,7 +78,18 @@ public class ItemManager {
 
     public void giveRandomItem(Player player) {
         ItemStack item = getRandomItem();
+        for (int attempt = 0; attempt < 8 && wasRecentlyGiven(player, item.getType()); attempt++) {
+            item = getRandomItem();
+        }
+
+        rememberGivenItem(player, item.getType());
         player.getInventory().addItem(item);
+    }
+
+    public void clearRecentItems(Iterable<UUID> playerIds) {
+        for (UUID playerId : playerIds) {
+            recentPlayerItems.remove(playerId);
+        }
     }
 
     public int getLegendaryPercent() {
@@ -155,6 +172,27 @@ public class ItemManager {
         }
 
         return items;
+    }
+
+    private boolean wasRecentlyGiven(Player player, Material material) {
+        if (antiRepeatHistorySize <= 0) {
+            return false;
+        }
+
+        Deque<Material> recentItems = recentPlayerItems.get(player.getUniqueId());
+        return recentItems != null && recentItems.contains(material);
+    }
+
+    private void rememberGivenItem(Player player, Material material) {
+        if (antiRepeatHistorySize <= 0) {
+            return;
+        }
+
+        Deque<Material> recentItems = recentPlayerItems.computeIfAbsent(player.getUniqueId(), ignored -> new ArrayDeque<>());
+        recentItems.addLast(material);
+        while (recentItems.size() > antiRepeatHistorySize) {
+            recentItems.removeFirst();
+        }
     }
 
     public Map<Material, Integer> getItemPool(String rarity) {

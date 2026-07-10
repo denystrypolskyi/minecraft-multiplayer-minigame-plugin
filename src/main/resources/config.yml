@@ -3,7 +3,7 @@ settings:
   endGameLobbyCountdownSeconds: 5
   endGameSpectatorDelayTicks: 40
   arenaResetDelayTicks: 160
-  borderShrinkSeconds: 300
+  borderShrinkSeconds: 360
   borderMinSize: 1
   lobbyWorldName: "world"
   witherCountdownSeconds: 5
@@ -13,6 +13,7 @@ settings:
   itemRarity:
     legendaryPercent: 6
     rarePercent: 20
+    antiRepeatHistorySize: 4
 
 arenas:
   # ------------------ 4 players ------------------
@@ -67,7 +68,7 @@ arenas:
     displayName: "Arena 8 #1"
     joiningOpen: true
     minPlayers: 4
-    itemCooldownSeconds: 2
+    itemCooldownSeconds: 3
 
   arena8_2:
     worldName: "arena8_2"
@@ -83,7 +84,7 @@ arenas:
     displayName: "Arena 8 #2"
     joiningOpen: true
     minPlayers: 4
-    itemCooldownSeconds: 2
+    itemCooldownSeconds: 3
 
   arena8_3:
     worldName: "arena8_3"
@@ -99,7 +100,7 @@ arenas:
     displayName: "Arena 8 #3"
     joiningOpen: true
     minPlayers: 4
-    itemCooldownSeconds: 2
+    itemCooldownSeconds: 3
 
   # ------------------ 12 players ------------------
   arena12_1:
@@ -120,7 +121,7 @@ arenas:
     displayName: "Arena 12 #1"
     joiningOpen: true
     minPlayers: 6
-    itemCooldownSeconds: 2
+    itemCooldownSeconds: 3
 
   arena12_2:
     worldName: "arena12_2"
@@ -140,7 +141,7 @@ arenas:
     displayName: "Arena 12 #2"
     joiningOpen: true
     minPlayers: 6
-    itemCooldownSeconds: 2
+    itemCooldownSeconds: 3
 
   arena12_3:
     worldName: "arena12_3"
@@ -160,4 +161,4 @@ arenas:
     displayName: "Arena 12 #3"
     joiningOpen: true
     minPlayers: 6
-    itemCooldownSeconds: 2
+    itemCooldownSeconds: 3
