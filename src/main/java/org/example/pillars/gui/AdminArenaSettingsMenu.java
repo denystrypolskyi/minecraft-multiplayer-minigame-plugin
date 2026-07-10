@@ -55,9 +55,21 @@ public class AdminArenaSettingsMenu implements InventoryHolder {
                 "toggle_joining"
         ));
 
-        inventory.setItem(9, actionItem(Material.RED_DYE, "§cMin Players -1", List.of("§7Minimum is 1."), "min:-1"));
-        inventory.setItem(10, displayItem(Material.PLAYER_HEAD, "§bMin Players", arena.getMinPlayers() + "/" + arena.getSpawnPoints().size()));
-        inventory.setItem(11, actionItem(Material.LIME_DYE, "§aMin Players +1", List.of("§7Maximum is arena capacity."), "min:1"));
+        inventory.setItem(9, actionItem(Material.RED_DYE, "§cPlayers to Start -1", List.of(
+                "§7Minimum is 1.",
+                "§7Countdown starts at this player count."
+        ), "min:-1"));
+        inventory.setItem(10, displayItem(
+                Material.PLAYER_HEAD,
+                "§bPlayers to Start",
+                arena.getMinPlayers() + "/" + arena.getSpawnPoints().size(),
+                "§7Countdown starts at this player count.",
+                "§7If players leave below it, countdown stops."
+        ));
+        inventory.setItem(11, actionItem(Material.LIME_DYE, "§aPlayers to Start +1", List.of(
+                "§7Maximum is arena capacity.",
+                "§7Countdown starts at this player count."
+        ), "min:1"));
 
         inventory.setItem(15, actionItem(Material.REDSTONE, "§cCooldown -1s", List.of("§7Minimum is 1 second."), "cooldown:-1"));
         inventory.setItem(16, displayItem(Material.CLOCK, "§eItem Cooldown", arena.getItemCooldownSeconds() + "s"));
@@ -95,12 +107,12 @@ public class AdminArenaSettingsMenu implements InventoryHolder {
         return item;
     }
 
-    private ItemStack displayItem(Material material, String name, String value) {
+    private ItemStack displayItem(Material material, String name, String value, String... lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(name + " §f" + value);
-            meta.setLore(List.of("§7Current value"));
+            meta.setLore(lore.length == 0 ? List.of("§7Current value") : List.of(lore));
             item.setItemMeta(meta);
         }
         return item;

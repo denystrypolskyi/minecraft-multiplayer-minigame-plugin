@@ -52,7 +52,7 @@ final class ArenaMenuItemFactory {
                     "§7Status: " + view.stateColor() + view.stateDisplay(),
                     "§7Joining: " + view.joiningDisplay(),
                     "§7Players: §f" + view.currentPlayers() + "§7/§f" + view.maxPlayers(),
-                    "§7Min players: §f" + arena.getMinPlayers() + "§7/§f" + view.maxPlayers(),
+                    "§7Starts at: §f" + arena.getMinPlayers() + "§7/§f" + view.maxPlayers() + " players",
                     "§7Item cooldown: §f" + arena.getItemCooldownSeconds() + "s"
             ));
             if (!arena.isJoiningOpen()) {

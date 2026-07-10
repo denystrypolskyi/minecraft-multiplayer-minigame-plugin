@@ -307,7 +307,7 @@ public class HudManager {
 
     public void sendArenaSettingsUpdated(Player player, Arena arena) {
         player.sendMessage("§6§lPILLARS §8» §aSaved §e" + arena.getDisplayName()
-                + "§a: min players §f" + arena.getMinPlayers()
+                + "§a: starts at §f" + arena.getMinPlayers() + " players"
                 + "§a, item cooldown §f" + arena.getItemCooldownSeconds() + "s§a.");
     }
 
