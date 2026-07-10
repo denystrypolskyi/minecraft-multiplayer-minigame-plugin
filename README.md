@@ -265,6 +265,24 @@ Example:
 
 The plugin creates `stats.json` if it does not already exist.
 
+## Media
+
+### Admin Menu Overview
+
+![Admin menu overview](docs/media/admin-menu-overview.gif)
+
+### Arena Settings Menu
+
+![Arena settings menu](docs/media/arena-settings-menu.gif)
+
+### Item Pool Editor
+
+![Item pool editor](docs/media/item-pool-editor.gif)
+
+### Player Arena Menu
+
+![Player arena menu](docs/media/player-arena-menu.gif)
+
 ## Screenshots
 
 ### Arena Menu
