@@ -283,21 +283,6 @@ The plugin creates `stats.json` if it does not already exist.
 
 ![Player arena menu](docs/media/player-arena-menu.gif)
 
-## Screenshots
-
-### Arena Menu
-
-![Arena menu](docs/screenshots/menu.png)
-
-### Game In Progress
-
-![Game in progress, screenshot 1](docs/screenshots/game-in-progress-1.png)
-![Game in progress, screenshot 2](docs/screenshots/game-in-progress-2.png)
-
-### Winner Screen
-
-![Winner screen](docs/screenshots/winner.png)
-
 ## Project Structure
 
 ```text
