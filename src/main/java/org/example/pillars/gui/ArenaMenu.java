@@ -7,14 +7,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.example.pillars.entities.Arena;
 import org.example.pillars.enums.GameState;
 import org.example.pillars.managers.ArenaManager;
 import org.example.pillars.managers.GameSessionManager;
 import org.example.pillars.managers.HudManager;
+import org.example.pillars.managers.TranslationManager;
 
 import java.util.List;
 
@@ -25,46 +24,48 @@ public class ArenaMenu implements InventoryHolder {
     private final ArenaManager arenaManager;
     private final GameSessionManager sessionManager;
     private final HudManager hudManager;
+    private final TranslationManager translations;
 
     private static final NamespacedKey ARENA_KEY = new NamespacedKey("pillars", "arena_worldname");
     private static final int MENU_SIZE = 54;
-    private static final String MENU_TITLE = "§5Arena Selection";
-
     public ArenaMenu(Player player, ArenaManager arenaManager, GameSessionManager sessionManager, HudManager hudManager) {
         this.player = player;
         this.arenaManager = arenaManager;
         this.sessionManager = sessionManager;
         this.hudManager = hudManager;
+        this.translations = hudManager.getTranslations();
 
-        this.inventory = Bukkit.createInventory(this, MENU_SIZE, MENU_TITLE);
+        this.inventory = Bukkit.createInventory(this, MENU_SIZE, translations.text("menus.arena-selection.title"));
         buildMenu();
     }
 
     private void buildMenu() {
-        ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta fillerMeta = filler.getItemMeta();
-        if (fillerMeta != null) fillerMeta.setDisplayName(" ");
-        filler.setItemMeta(fillerMeta);
-
-        for (int i = 0; i < MENU_SIZE; i++) {
-            inventory.setItem(i, filler);
-        }
+        ArenaMenuItemFactory.fill(inventory, Material.BLACK_STAINED_GLASS_PANE);
 
         List<Arena> arenas = arenaManager.getArenas().stream()
                 .sorted(ArenaMenuItemFactory.arenaListOrder())
                 .toList();
 
-        int slot = 9;
-        for (Arena arena : arenas) {
-            if (slot >= MENU_SIZE) {
-                break;
-            }
-            inventory.setItem(slot++, ArenaMenuItemFactory.playerArenaItem(
-                    arena,
-                    sessionManager.getSession(arena),
-                    ARENA_KEY
+        if (arenas.isEmpty()) {
+            inventory.setItem(22, ArenaMenuItemFactory.visualItem(
+                    Material.BARRIER,
+                    translations.text("messages.no-joinable-arena"),
+                    List.of()
             ));
+            return;
         }
+
+        ArenaMenuItemFactory.placeTriangleArenaItems(
+                inventory,
+                arenas,
+                arena -> ArenaMenuItemFactory.playerArenaItem(
+                        arena,
+                        sessionManager.getSession(arena),
+                        ARENA_KEY,
+                        translations
+                ),
+                translations
+        );
     }
 
     public void open() {

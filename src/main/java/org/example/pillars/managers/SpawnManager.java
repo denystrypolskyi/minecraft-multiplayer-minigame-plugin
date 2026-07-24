@@ -2,6 +2,8 @@ package org.example.pillars.managers;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.example.pillars.entities.Arena;
 
@@ -11,7 +13,15 @@ import java.util.concurrent.ThreadLocalRandom;
 public class SpawnManager {
 
     public Location getFarthestSpawn(Arena arena, Collection<UUID> activePlayers, Collection<Location> occupied) {
-        List<Location> spawns = new ArrayList<>(arena.getSpawnPoints());
+        List<Location> spawns = new ArrayList<>();
+        for (Location configuredSpawn : arena.getSpawnPoints()) {
+            if (configuredSpawn == null || configuredSpawn.getWorld() == null) continue;
+
+            Location blockLocation = configuredSpawn.getBlock().getLocation();
+            if (!spawns.contains(blockLocation)) {
+                spawns.add(blockLocation);
+            }
+        }
         if (spawns.isEmpty()) return null;
 
         spawns.removeIf(occupied::contains);
@@ -48,18 +58,38 @@ public class SpawnManager {
             }
         }
 
-        return bestSpawn.getBlock().getLocation();
+        return bestSpawn;
     }
 
-    public void prepareSpawn(Location spawn) {
-        if (spawn != null) {
-            spawn.getBlock().setType(org.bukkit.Material.BEDROCK);
+    public void prepareSpawn(Location spawn, int height) {
+        World world = spawn == null ? null : spawn.getWorld();
+        if (world == null) return;
+
+        int topY = spawn.getBlockY();
+        int bottomY = getPillarBottomY(world, topY, height);
+        for (int y = topY; y >= bottomY; y--) {
+            world.getBlockAt(spawn.getBlockX(), y, spawn.getBlockZ())
+                    .setType(Material.BEDROCK, false);
         }
     }
 
-    public void cleanupSpawn(Location spawn) {
-        if (spawn != null && spawn.getBlock().getType() == org.bukkit.Material.BEDROCK) {
-            spawn.getBlock().setType(org.bukkit.Material.AIR);
+    public void cleanupSpawn(Location spawn, int height) {
+        World world = spawn == null ? null : spawn.getWorld();
+        if (world == null) return;
+
+        int topY = spawn.getBlockY();
+        int bottomY = getPillarBottomY(world, topY, height);
+        for (int y = topY; y >= bottomY; y--) {
+            org.bukkit.block.Block block = world.getBlockAt(spawn.getBlockX(), y, spawn.getBlockZ());
+            if (block.getType() == Material.BEDROCK) {
+                block.setType(Material.AIR, false);
+            }
         }
+    }
+
+    private int getPillarBottomY(World world, int topY, int height) {
+        int worldHeight = world.getMaxHeight() - world.getMinHeight();
+        int safeHeight = Math.max(1, Math.min(height, worldHeight));
+        return Math.max(world.getMinHeight(), topY - safeHeight + 1);
     }
 }

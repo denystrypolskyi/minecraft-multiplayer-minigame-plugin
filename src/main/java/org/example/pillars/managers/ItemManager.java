@@ -19,6 +19,7 @@ import java.util.UUID;
 public class ItemManager {
     private final Random random = new Random();
     private final JavaPlugin plugin;
+    private final TranslationManager translations;
     private final File itemPoolsFile;
     private int legendaryPercent;
     private int rarePercent;
@@ -28,8 +29,9 @@ public class ItemManager {
     private Map<Material, Integer> legendaryItems;
     private final Map<UUID, Deque<Material>> recentPlayerItems = new HashMap<>();
 
-    public ItemManager(JavaPlugin plugin) {
+    public ItemManager(JavaPlugin plugin, TranslationManager translations) {
         this.plugin = plugin;
+        this.translations = translations;
         this.itemPoolsFile = new File(plugin.getDataFolder(), "item-pools.yml");
         saveDefaultItemPools();
         migrateLegacyConfigItemPools();
@@ -257,7 +259,10 @@ public class ItemManager {
         try {
             itemPools.save(itemPoolsFile);
         } catch (Exception e) {
-            plugin.getLogger().severe("Could not save item-pools.yml: " + e.getMessage());
+            plugin.getLogger().severe(translations.text(
+                    "logs.item-pools-save-failed",
+                    "error", e.getMessage()
+            ));
         }
     }
 

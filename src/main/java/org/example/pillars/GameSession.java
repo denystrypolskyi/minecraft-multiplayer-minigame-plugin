@@ -40,6 +40,7 @@ public class GameSession {
     private BukkitTask witherCountdownTask;
     private BukkitTask witherEffectTask;
     private BukkitTask witherStartDelayTask;
+    private BukkitTask endGameCountdownStartDelayTask;
     private BukkitTask arenaResetDelayTask;
 
     private final Map<UUID, BukkitTask> endGameCountdownTasks = new HashMap<>();
@@ -57,6 +58,8 @@ public class GameSession {
     private final long arenaResetDelayTicks;
     private final long borderShrinkSeconds;
     private final double borderMinSize;
+    private final double borderSpawnPaddingBlocks;
+    private final int spawnPillarHeightBlocks;
     private final String lobbyWorldName;
     private final int witherCountdownSeconds;
     private final int witherEffectDurationTicks;
@@ -90,8 +93,13 @@ public class GameSession {
         this.endGameLobbyCountdownSeconds = Math.max(1, plugin.getConfig().getInt("settings.endGameLobbyCountdownSeconds", 5));
         this.endGameSpectatorDelayTicks = Math.max(0L, plugin.getConfig().getLong("settings.endGameSpectatorDelayTicks", 40L));
         this.arenaResetDelayTicks = Math.max(1L, plugin.getConfig().getLong("settings.arenaResetDelayTicks", 160L));
-        this.borderShrinkSeconds = Math.max(1L, plugin.getConfig().getLong("settings.borderShrinkSeconds", 300L));
+        this.borderShrinkSeconds = Math.max(1L, plugin.getConfig().getLong("settings.borderShrinkSeconds", 360L));
         this.borderMinSize = Math.max(1.0, plugin.getConfig().getDouble("settings.borderMinSize", 1.0));
+        this.borderSpawnPaddingBlocks = Math.max(1.0, plugin.getConfig().getDouble("settings.borderSpawnPaddingBlocks", 10.0));
+        this.spawnPillarHeightBlocks = Math.max(1, Math.min(
+                64,
+                plugin.getConfig().getInt("settings.spawnPillarHeightBlocks", 5)
+        ));
         this.lobbyWorldName = plugin.getConfig().getString("settings.lobbyWorldName", "world");
         this.witherCountdownSeconds = Math.max(1, plugin.getConfig().getInt("settings.witherCountdownSeconds", 5));
         this.witherEffectDurationTicks = Math.max(1, plugin.getConfig().getInt("settings.witherEffectDurationTicks", 40));
@@ -159,7 +167,7 @@ public class GameSession {
 
         if (state == GameState.WAITING || state == GameState.STARTING) {
             Location spawn = occupiedSpawns.remove(uuid);
-            spawnManager.cleanupSpawn(spawn);
+            spawnManager.cleanupSpawn(spawn, spawnPillarHeightBlocks);
 
             if (state == GameState.STARTING && activePlayers.size() < getMinPlayers()) {
                 state = GameState.WAITING;
@@ -289,10 +297,13 @@ public class GameSession {
             }
         }
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        endGameCountdownStartDelayTask = Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            endGameCountdownStartDelayTask = null;
             for (UUID uuid : allPlayersSnapshot) {
                 Player player = Bukkit.getPlayer(uuid);
-                if (player != null) startEndGameCountdown(player, endGameLobbyCountdownSeconds);
+                if (player != null && spectators.contains(uuid)) {
+                    startEndGameCountdown(player, endGameLobbyCountdownSeconds);
+                }
             }
         }, endGameSpectatorDelayTicks);
 
@@ -300,13 +311,19 @@ public class GameSession {
     }
 
     public void startEndGameCountdown(Player player, int seconds) {
+        UUID uuid = player.getUniqueId();
+        BukkitTask previousTask = endGameCountdownTasks.remove(uuid);
+        if (previousTask != null) {
+            previousTask.cancel();
+        }
+
         final int[] timeLeft = {seconds};
 
         BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            if (!player.isOnline()) {
-                BukkitTask t = endGameCountdownTasks.remove(player.getUniqueId());
+            if (!player.isOnline() || !spectators.contains(uuid)) {
+                BukkitTask t = endGameCountdownTasks.remove(uuid);
                 if (t != null) t.cancel();
-                spectators.remove(player.getUniqueId());
+                spectators.remove(uuid);
                 return;
             }
 
@@ -318,14 +335,14 @@ public class GameSession {
                 playerManager.resetAndReturnToLobby(player, lobbyWorldName);
                 hudManager.resetScoreboard(player);
 
-                spectators.remove(player.getUniqueId());
+                spectators.remove(uuid);
 
-                BukkitTask t = endGameCountdownTasks.remove(player.getUniqueId());
+                BukkitTask t = endGameCountdownTasks.remove(uuid);
                 if (t != null) t.cancel();
             }
         }, 0L, 20L);
 
-        endGameCountdownTasks.put(player.getUniqueId(), task);
+        endGameCountdownTasks.put(uuid, task);
     }
 
 
@@ -383,7 +400,7 @@ public class GameSession {
             return false;
         }
 
-        spawnManager.prepareSpawn(spawn);
+        spawnManager.prepareSpawn(spawn, spawnPillarHeightBlocks);
 
         occupiedSpawns.put(player.getUniqueId(), spawn);
 
@@ -440,6 +457,7 @@ public class GameSession {
         cancelWitherTask();
         cancelFinalZoneTask();
         cancelWitherStartDelayTask();
+        cancelEndGameCountdownStartDelayTask();
         cancelArenaResetDelayTask();
 
         cancelEndGameCountdownTasks();
@@ -755,16 +773,18 @@ public class GameSession {
         double avgZ = sumZ / spawns.size();
         Location borderCenter = new Location(world, avgX, avgY, avgZ);
 
-        double maxDistance = 0;
+        double maxAxisDistance = 0;
         for (Location spawn : spawns) {
             double dx = (spawn.getX() + 0.5) - avgX;
             double dz = (spawn.getZ() + 0.5) - avgZ;
-            double distance = Math.sqrt(dx * dx + dz * dz);
-            maxDistance = Math.max(maxDistance, distance);
+            double axisDistance = Math.max(Math.abs(dx), Math.abs(dz));
+            maxAxisDistance = Math.max(maxAxisDistance, axisDistance);
         }
 
-        double borderPadding = Math.max(2, spawns.size() / 4);
-        double initialSize = (maxDistance + borderPadding) * 2;
+        double initialSize = Math.max(
+                borderMinSize,
+                (maxAxisDistance + borderSpawnPaddingBlocks) * 2
+        );
         WorldBorder border = world.getWorldBorder();
         border.setCenter(borderCenter);
         border.setSize(initialSize);
@@ -812,6 +832,13 @@ public class GameSession {
         if (witherStartDelayTask != null) {
             witherStartDelayTask.cancel();
             witherStartDelayTask = null;
+        }
+    }
+
+    private void cancelEndGameCountdownStartDelayTask() {
+        if (endGameCountdownStartDelayTask != null) {
+            endGameCountdownStartDelayTask.cancel();
+            endGameCountdownStartDelayTask = null;
         }
     }
 

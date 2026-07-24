@@ -2,26 +2,27 @@ package org.example.pillars;
 
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.permissions.Permission;
 import org.example.pillars.command.PillarsCommand;
 import org.example.pillars.listeners.GameSessionPlayerListener;
 import org.example.pillars.listeners.GuiListener;
 import org.example.pillars.managers.*;
 
 public final class PillarsPlugin extends JavaPlugin {
-    // TODO add duels/VIP rooms
-    // TODO add GUI to select arena
+    // TODO add persistent player stats (gui/leaderboards)
     @Override
     public void onEnable() {
         saveDefaultConfig();
 
+        TranslationManager translationManager = new TranslationManager(this);
         TeleportManager teleportManager = new TeleportManager();
-        ItemManager itemManager = new ItemManager(this);
+        ItemManager itemManager = new ItemManager(this, translationManager);
         SoundManager soundManager = new SoundManager();
-        HudManager hudManager = new HudManager();
+        HudManager hudManager = new HudManager(translationManager);
         SpawnManager spawnManager = new SpawnManager();
 
-        ArenaManager arenaManager = new ArenaManager(this);
-        StatsManager statsManager = new StatsManager(this);
+        ArenaManager arenaManager = new ArenaManager(this, translationManager);
+        StatsManager statsManager = new StatsManager(this, translationManager);
 
         PlayerManager playerManager = new PlayerManager(teleportManager, hudManager);
 
@@ -46,11 +47,28 @@ public final class PillarsPlugin extends JavaPlugin {
 
         PluginCommand pillarsCommand = getCommand("pillars");
         if (pillarsCommand == null) {
-            getLogger().severe("Command 'pillars' is not defined in plugin.yml. Disabling plugin.");
+            getLogger().severe(translationManager.text("logs.command-not-defined"));
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
 
+        pillarsCommand.setDescription(translationManager.text("plugin.command-description"));
+        pillarsCommand.setUsage(translationManager.text("plugin.command-usage"));
+        setPermissionDescription(
+                "pillars.forcestart",
+                translationManager.text("plugin.force-start-permission-description")
+        );
+        setPermissionDescription(
+                "pillars.admin",
+                translationManager.text("plugin.admin-permission-description")
+        );
         pillarsCommand.setExecutor(new PillarsCommand(arenaManager, gameSessionManager, hudManager, itemManager));
+    }
+
+    private void setPermissionDescription(String permissionName, String description) {
+        Permission permission = getServer().getPluginManager().getPermission(permissionName);
+        if (permission != null) {
+            permission.setDescription(description);
+        }
     }
 }

@@ -14,20 +14,20 @@ import org.example.pillars.managers.ArenaManager;
 import org.example.pillars.managers.GameSessionManager;
 import org.example.pillars.managers.HudManager;
 import org.example.pillars.managers.ItemManager;
+import org.example.pillars.managers.TranslationManager;
 
 import java.util.List;
 
 public class AdminConfigMenu implements InventoryHolder {
     private static final NamespacedKey ACTION_KEY = new NamespacedKey("pillars", "admin_action");
     private static final int MENU_SIZE = 27;
-    private static final String MENU_TITLE = "§4Pillars Admin";
-
     private final Inventory inventory;
     private final Player player;
     private final ItemManager itemManager;
     private final HudManager hudManager;
     private final ArenaManager arenaManager;
     private final GameSessionManager gameSessionManager;
+    private final TranslationManager translations;
 
     public AdminConfigMenu(Player player, ItemManager itemManager, HudManager hudManager, ArenaManager arenaManager, GameSessionManager gameSessionManager) {
         this.player = player;
@@ -35,7 +35,8 @@ public class AdminConfigMenu implements InventoryHolder {
         this.hudManager = hudManager;
         this.arenaManager = arenaManager;
         this.gameSessionManager = gameSessionManager;
-        this.inventory = Bukkit.createInventory(this, MENU_SIZE, MENU_TITLE);
+        this.translations = hudManager.getTranslations();
+        this.inventory = Bukkit.createInventory(this, MENU_SIZE, translations.text("menus.rarity.title"));
         buildMenu();
     }
 
@@ -45,21 +46,25 @@ public class AdminConfigMenu implements InventoryHolder {
         }
 
         inventory.setItem(4, infoItem());
-        inventory.setItem(0, actionItem(Material.ARROW, "§eBack", "back"));
+        inventory.setItem(0, actionItem(Material.ARROW, translations.text("menus.common.back"), "back"));
 
-        inventory.setItem(9, actionItem(Material.RED_DYE, "§cLegendary -5%", "legendary:-5"));
-        inventory.setItem(10, actionItem(Material.REDSTONE, "§cLegendary -1%", "legendary:-1"));
-        inventory.setItem(11, displayItem(Material.NETHERITE_BLOCK, "§6Legendary", itemManager.getLegendaryPercent()));
-        inventory.setItem(12, actionItem(Material.GLOWSTONE_DUST, "§aLegendary +1%", "legendary:1"));
-        inventory.setItem(13, actionItem(Material.LIME_DYE, "§aLegendary +5%", "legendary:5"));
+        String legendary = translations.text("rarities.legendary");
+        String rare = translations.text("rarities.rare");
+        String common = translations.text("rarities.common");
 
-        inventory.setItem(18, actionItem(Material.ORANGE_DYE, "§cRare -5%", "rare:-5"));
-        inventory.setItem(19, actionItem(Material.COPPER_INGOT, "§cRare -1%", "rare:-1"));
-        inventory.setItem(20, displayItem(Material.OBSIDIAN, "§bRare", itemManager.getRarePercent()));
-        inventory.setItem(21, actionItem(Material.LAPIS_LAZULI, "§aRare +1%", "rare:1"));
-        inventory.setItem(22, actionItem(Material.EMERALD, "§aRare +5%", "rare:5"));
+        inventory.setItem(9, actionItem(Material.RED_DYE, translations.text("menus.rarity.decrease-five", "rarity", legendary), "legendary:-5"));
+        inventory.setItem(10, actionItem(Material.REDSTONE, translations.text("menus.rarity.decrease-one", "rarity", legendary), "legendary:-1"));
+        inventory.setItem(11, displayItem(Material.NETHERITE_BLOCK, "§6" + legendary, itemManager.getLegendaryPercent()));
+        inventory.setItem(12, actionItem(Material.GLOWSTONE_DUST, translations.text("menus.rarity.increase-one", "rarity", legendary), "legendary:1"));
+        inventory.setItem(13, actionItem(Material.LIME_DYE, translations.text("menus.rarity.increase-five", "rarity", legendary), "legendary:5"));
 
-        inventory.setItem(16, displayItem(Material.STONE, "§7Common", itemManager.getCommonPercent()));
+        inventory.setItem(18, actionItem(Material.ORANGE_DYE, translations.text("menus.rarity.decrease-five", "rarity", rare), "rare:-5"));
+        inventory.setItem(19, actionItem(Material.COPPER_INGOT, translations.text("menus.rarity.decrease-one", "rarity", rare), "rare:-1"));
+        inventory.setItem(20, displayItem(Material.OBSIDIAN, "§b" + rare, itemManager.getRarePercent()));
+        inventory.setItem(21, actionItem(Material.LAPIS_LAZULI, translations.text("menus.rarity.increase-one", "rarity", rare), "rare:1"));
+        inventory.setItem(22, actionItem(Material.EMERALD, translations.text("menus.rarity.increase-five", "rarity", rare), "rare:5"));
+
+        inventory.setItem(16, displayItem(Material.STONE, "§7" + common, itemManager.getCommonPercent()));
     }
 
     private ItemStack filler() {
@@ -76,11 +81,8 @@ public class AdminConfigMenu implements InventoryHolder {
         ItemStack item = new ItemStack(Material.BOOK);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName("§6§lItem Rarity");
-            meta.setLore(List.of(
-                    "§7Changes save immediately.",
-                    "§7Common is calculated automatically."
-            ));
+            meta.setDisplayName(translations.text("menus.rarity.info-name"));
+            meta.setLore(translations.list("menus.rarity.info-lore"));
             item.setItemMeta(meta);
         }
         return item;
@@ -91,7 +93,7 @@ public class AdminConfigMenu implements InventoryHolder {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(name + " §f" + percent + "%");
-            meta.setLore(List.of("§7Current chance"));
+            meta.setLore(List.of(translations.text("menus.rarity.current-chance")));
             item.setItemMeta(meta);
         }
         return item;
@@ -102,7 +104,7 @@ public class AdminConfigMenu implements InventoryHolder {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(name);
-            meta.setLore(List.of("§7Click to update rarity."));
+            meta.setLore(List.of(translations.text("menus.rarity.update-lore")));
             meta.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, action);
             item.setItemMeta(meta);
         }

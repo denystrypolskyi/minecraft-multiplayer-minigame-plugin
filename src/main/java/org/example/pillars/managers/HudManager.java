@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class HudManager {
+    private final TranslationManager translations;
     private final Map<UUID, Scoreboard> playerScoreboards = new HashMap<>();
     private final Map<UUID, Map<String, Team>> playerTeams = new HashMap<>();
 
@@ -28,12 +29,20 @@ public class HudManager {
     private static final int MEDIUM_STAY = 30;
     private static final int LONG_STAY = 50;
 
+    public HudManager(TranslationManager translations) {
+        this.translations = translations;
+    }
+
+    public TranslationManager getTranslations() {
+        return translations;
+    }
+
     private void initializeScoreboard(@NotNull Player player) {
         UUID uuid = player.getUniqueId();
         if (playerScoreboards.containsKey(uuid)) return;
 
         Scoreboard board = Bukkit.getScoreboardManager().getNewScoreboard();
-        Objective obj = board.registerNewObjective("pillarshud", "dummy", "§6§lPILLARS");
+        Objective obj = board.registerNewObjective("pillarshud", "dummy", translations.text("scoreboard.title"));
         obj.setDisplaySlot(DisplaySlot.SIDEBAR);
 
         Map<String, Team> teams = new LinkedHashMap<>();
@@ -86,26 +95,26 @@ public class HudManager {
         Map<String, Team> teams = playerTeams.get(uuid);
         if (teams == null) return;
 
-        teams.get("infoHeader").setPrefix("§6§lINFO  ");
+        teams.get("infoHeader").setPrefix(translations.text("scoreboard.info-header"));
 
-        teams.get("playerLine").setPrefix("§a✦ §fPlayer: ");
+        teams.get("playerLine").setPrefix(translations.text("scoreboard.player-label"));
         teams.get("playerLine").setSuffix("§a" + player.getName());
 
-        teams.get("onlineLine").setPrefix("§b⬤ §fOnline: ");
+        teams.get("onlineLine").setPrefix(translations.text("scoreboard.online-label"));
         teams.get("onlineLine").setSuffix("§b" + players + "§7/§b" + maxPlayers);
 
-        teams.get("statusLine").setPrefix("§d◆ §fStatus: ");
+        teams.get("statusLine").setPrefix(translations.text("scoreboard.status-label"));
         teams.get("statusLine").setSuffix(formatState(state));
 
-        teams.get("arenaLine").setPrefix("§e⚔ §fArena: ");
+        teams.get("arenaLine").setPrefix(translations.text("scoreboard.arena-label"));
         teams.get("arenaLine").setSuffix("§e" + arenaName);
 
-        teams.get("statHeader").setPrefix("§c§lSTATS  ");
+        teams.get("statHeader").setPrefix(translations.text("scoreboard.stats-header"));
 
-        teams.get("killsLine").setPrefix("§4☠ §fKills: ");
+        teams.get("killsLine").setPrefix(translations.text("scoreboard.kills-label"));
         teams.get("killsLine").setSuffix("§4" + kills);
 
-        teams.get("winsLine").setPrefix("§6★ §fWins: ");
+        teams.get("winsLine").setPrefix(translations.text("scoreboard.wins-label"));
         teams.get("winsLine").setSuffix("§6" + wins);
     }
 
@@ -162,77 +171,158 @@ public class HudManager {
     }
 
     public void sendReturnToLobbyTitle(Player player, int seconds) {
-        player.sendTitle("§eReturning to lobby", "§fin §a" + seconds + " §fsec.", 0, MEDIUM_STAY, 0);
+        player.sendTitle(
+                translations.text("titles.return-to-lobby.title"),
+                translations.text("titles.return-to-lobby.subtitle", "seconds", seconds),
+                0,
+                MEDIUM_STAY,
+                0
+        );
     }
 
     public void sendWinnerTitle(Player player, String winnerName) {
-        player.sendTitle("§6§lWINNER", "§e" + winnerName + " §7won the game!", FADE_IN, LONG_STAY, FADE_OUT);
+        player.sendTitle(
+                translations.text("titles.winner.title"),
+                translations.text("titles.winner.subtitle", "winner", winnerName),
+                FADE_IN,
+                LONG_STAY,
+                FADE_OUT
+        );
     }
 
     public void sendCountdownTitle(Player player, int secondsLeft) {
-        player.sendTitle("§6§l" + secondsLeft, "§fUntil the game starts", FADE_IN, MEDIUM_STAY, FADE_OUT);
+        player.sendTitle(
+                translations.text("titles.countdown.title", "seconds", secondsLeft),
+                translations.text("titles.countdown.subtitle"),
+                FADE_IN,
+                MEDIUM_STAY,
+                FADE_OUT
+        );
     }
 
     public void sendGameStartTitle(Player player) {
-        player.sendTitle("§aThe game has started!", "§fGood luck!", FADE_IN, LONG_STAY, FADE_OUT);
+        player.sendTitle(
+                translations.text("titles.game-start.title"),
+                translations.text("titles.game-start.subtitle"),
+                FADE_IN,
+                LONG_STAY,
+                FADE_OUT
+        );
     }
 
     public void sendArenaResettingTitle(Player player) {
-        player.sendTitle("§6§lARENA", "§eResetting... §7Please wait", FADE_IN, MEDIUM_STAY, FADE_OUT);
+        player.sendTitle(
+                translations.text("titles.arena-resetting.title"),
+                translations.text("titles.arena-resetting.subtitle"),
+                FADE_IN,
+                MEDIUM_STAY,
+                FADE_OUT
+        );
     }
 
     public void sendGameAlreadyStartedTitle(Player player) {
-        player.sendTitle("§c§lERROR", "§fThe game has already started!", FADE_IN, SHORT_STAY, FADE_OUT);
+        player.sendTitle(
+                translations.text("titles.game-already-started.title"),
+                translations.text("titles.game-already-started.subtitle"),
+                FADE_IN,
+                SHORT_STAY,
+                FADE_OUT
+        );
     }
 
     public void sendItemCooldown(Player player, int secondsLeft, long secondsUntilNextZoneDecrease, double zoneSize) {
         String zoneTimer = secondsUntilNextZoneDecrease > 0
-                ? "§cZone -1 block in §e" + secondsUntilNextZoneDecrease + "s"
-                : "§cZone: §4Final size";
+                ? translations.text("action-bar.zone-decrease", "seconds", secondsUntilNextZoneDecrease)
+                : translations.text("action-bar.zone-final");
 
-        player.sendActionBar("§eItem in §a" + secondsLeft + "s §8| " + zoneTimer + " §8| §bSize: §f" + Math.ceil(zoneSize));
+        player.sendActionBar(translations.text(
+                "action-bar.item-status",
+                "seconds", secondsLeft,
+                "zone", zoneTimer,
+                "size", Math.ceil(zoneSize)
+        ));
     }
 
     public void sendNotEnoughPlayersTitle(Player player) {
-        player.sendTitle("§cNot enough players!", "§fThe game has stopped.", FADE_IN, MEDIUM_STAY, FADE_OUT);
+        player.sendTitle(
+                translations.text("titles.not-enough-players.title"),
+                translations.text("titles.not-enough-players.subtitle"),
+                FADE_IN,
+                MEDIUM_STAY,
+                FADE_OUT
+        );
     }
 
     public void sendWaitingForPlayers(Player player, int currentPlayers, int minPlayers) {
         int needed = Math.max(0, minPlayers - currentPlayers);
         String status = needed == 0
-                ? "§aStarting soon"
-                : "§eWaiting for §f" + needed + "§e more player" + (needed == 1 ? "" : "s");
+                ? translations.text("action-bar.waiting-ready")
+                : translations.text(
+                        "action-bar.waiting-more",
+                        "count", needed,
+                        "players", waitingPlayerWord(needed)
+                );
 
-        player.sendActionBar(status + " §8| §bPlayers: §f" + currentPlayers + "§7/§f" + minPlayers);
+        player.sendActionBar(status);
+    }
+
+    private String waitingPlayerWord(int amount) {
+        if (translations.getLanguage().equals("ru")) {
+            int lastTwoDigits = Math.abs(amount) % 100;
+            int lastDigit = Math.abs(amount) % 10;
+            if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+                return "игроков";
+            }
+            if (lastDigit == 1) {
+                return "игрока";
+            }
+            if (lastDigit >= 2 && lastDigit <= 4) {
+                return "игрока";
+            }
+            return "игроков";
+        }
+
+        return amount == 1 ? "player" : "players";
     }
 
     public void sendSpectatorTitle(Player player) {
-        player.sendTitle("§cYou lost", "§7You have been eliminated", FADE_IN, MEDIUM_STAY, FADE_OUT);
+        player.sendTitle(
+                translations.text("titles.spectator.title"),
+                translations.text("titles.spectator.subtitle"),
+                FADE_IN,
+                MEDIUM_STAY,
+                FADE_OUT
+        );
     }
 
     public void sendArenaNotFound(Player player) {
-        player.sendMessage("§cArena not found!");
+        player.sendMessage(translations.text("messages.arena-not-found"));
     }
 
     public void sendLeftArena(Player player) {
-        player.sendMessage("§eYou left the arena.");
+        player.sendMessage(translations.text("messages.left-arena"));
     }
 
     public void sendNotInGame(Player player) {
-        player.sendMessage("§cYou are not in a game.");
+        player.sendMessage(translations.text("messages.not-in-game"));
     }
 
     public void sendGameAlreadyRunning(Player player) {
-        player.sendMessage("§cThe game is already running.");
+        player.sendMessage(translations.text("messages.game-already-running"));
     }
 
     public void sendArenaClosed(Player player, String arenaName) {
-        player.sendMessage("§c" + arenaName + " is currently closed for joining.");
+        player.sendMessage(translations.text("messages.arena-closed", "arena", arenaName));
     }
 
     public void sendPlayerJoinedArena(Set<UUID> recipients, Player player, String arenaName, int currentPlayers, int maxPlayers) {
-        String message = "§6§lPILLARS §8» §a" + player.getName() + " §7joined §e" + arenaName
-                + " §8(§b" + currentPlayers + "§7/§b" + maxPlayers + "§8)";
+        String message = translations.text(
+                "messages.player-joined",
+                "player", player.getName(),
+                "arena", arenaName,
+                "current", currentPlayers,
+                "maximum", maxPlayers
+        );
 
         for (UUID uuid : recipients) {
             Player recipient = Bukkit.getPlayer(uuid);
@@ -243,123 +333,174 @@ public class HudManager {
     }
 
     public void broadcastForceStartedArena(Player player, String arenaName) {
-        Bukkit.broadcastMessage("§6§lPILLARS §8» §e" + arenaName + " §ahas been force-started §7by §f" + player.getName());
+        Bukkit.broadcastMessage(translations.text(
+                "messages.force-started",
+                "arena", arenaName,
+                "player", player.getName()
+        ));
     }
 
     public void broadcastGameStarted(String arenaName) {
-        Bukkit.broadcastMessage("§6§lPILLARS §8» §aThe game has started on §e" + arenaName + "§a. §7Good luck!");
+        Bukkit.broadcastMessage(translations.text("messages.game-started", "arena", arenaName));
     }
 
     public void broadcastWinner(String winnerName, String arenaName) {
-        Bukkit.broadcastMessage("§6§lPILLARS §8» §e" + winnerName + " §6won §e" + arenaName + "§6! §aCongratulations!");
+        Bukkit.broadcastMessage(translations.text(
+                "messages.winner",
+                "winner", winnerName,
+                "arena", arenaName
+        ));
     }
 
     public void sendNoWinnerTitle(Player player) {
-        player.sendTitle("§c§lNO WINNER", "§7All players have been eliminated", FADE_IN, LONG_STAY, FADE_OUT);
+        player.sendTitle(
+                translations.text("titles.no-winner.title"),
+                translations.text("titles.no-winner.subtitle"),
+                FADE_IN,
+                LONG_STAY,
+                FADE_OUT
+        );
     }
 
     public void sendNoPermission(Player player) {
-        player.sendMessage("§cYou do not have permission to use this command.");
+        player.sendMessage(translations.text("messages.no-permission"));
     }
 
     public void sendCommandUsage(Player player) {
-        player.sendMessage("§eUsage: §f/pillars <join|quickjoin|leave|forcestart|menu|admin>");
+        player.sendMessage(translations.text("messages.command-usage"));
     }
 
     public void sendJoinUsage(Player player) {
-        player.sendMessage("§eUsage: §f/pillars join <arena>");
+        player.sendMessage(translations.text("messages.join-usage"));
     }
 
     public void sendNoJoinableSession(Player player) {
-        player.sendMessage("§cNo joinable arena was found.");
+        player.sendMessage(translations.text("messages.no-joinable-arena"));
     }
 
     public void sendItemAddUsage(Player player) {
-        player.sendMessage("§eUsage: §f/pillars itemadd <common|rare|legendary>");
-        player.sendMessage("§7Advanced: §f/pillars itemadd <common|rare|legendary> <weight>");
+        player.sendMessage(translations.text("messages.item-add-usage"));
+        player.sendMessage(translations.text("messages.item-add-advanced"));
     }
 
     public void sendItemRemoveUsage(Player player) {
-        player.sendMessage("§eUsage: §f/pillars itemremove <common|rare|legendary>");
-        player.sendMessage("§7Advanced: §f/pillars itemremove <common|rare|legendary> <material>");
+        player.sendMessage(translations.text("messages.item-remove-usage"));
+        player.sendMessage(translations.text("messages.item-remove-advanced"));
     }
 
     public void sendHoldItemToConfigure(Player player) {
-        player.sendMessage("§cHold the item you want to configure in your main hand.");
+        player.sendMessage(translations.text("messages.hold-item"));
     }
 
     public void sendUnknownMaterial(Player player) {
-        player.sendMessage("§cUnknown material.");
+        player.sendMessage(translations.text("messages.unknown-material"));
     }
 
     public void sendItemConfigured(Player player, Material material, String rarity, int weight) {
-        player.sendMessage("§6§lPILLARS §8» §aAdded §f" + material.name() + " §ato §e" + rarity.toLowerCase() + " §aitems.");
-        player.sendMessage("§7Internal weight: §f" + weight);
+        player.sendMessage(translations.text(
+                "messages.item-configured",
+                "material", material.name(),
+                "rarity", translations.text("rarities." + rarity.toLowerCase())
+        ));
+        player.sendMessage(translations.text("messages.internal-weight", "weight", weight));
     }
 
     public void sendItemRemoved(Player player, Material material, String rarity) {
-        player.sendMessage("§6§lPILLARS §8» §eDisabled §f" + material.name() + " §ein §f" + rarity.toLowerCase() + "§e items.");
+        player.sendMessage(translations.text(
+                "messages.item-removed",
+                "material", material.name(),
+                "rarity", translations.text("rarities." + rarity.toLowerCase())
+        ));
     }
 
     public void sendAdminConfigUpdated(Player player, int commonPercent, int rarePercent, int legendaryPercent) {
-        player.sendMessage("§6§lPILLARS §8» §aRarity updated: §7Common §f" + commonPercent + "% §8| §bRare §f" + rarePercent + "% §8| §6Legendary §f" + legendaryPercent + "%");
+        player.sendMessage(translations.text(
+                "messages.rarity-updated",
+                "common_name", translations.text("rarities.common"),
+                "common", commonPercent,
+                "rare_name", translations.text("rarities.rare"),
+                "rare", rarePercent,
+                "legendary_name", translations.text("rarities.legendary"),
+                "legendary", legendaryPercent
+        ));
     }
 
     public void sendArenaSettingsUpdated(Player player, Arena arena) {
-        player.sendMessage("§6§lPILLARS §8» §aSaved §e" + arena.getDisplayName()
-                + "§a: starts at §f" + arena.getMinPlayers() + " players"
-                + "§a, item cooldown §f" + arena.getItemCooldownSeconds() + "s§a.");
+        player.sendMessage(translations.text(
+                "messages.arena-settings-updated",
+                "arena", arena.getDisplayName(),
+                "minimum", arena.getMinPlayers(),
+                "players", translations.plural("units.player-at", arena.getMinPlayers()),
+                "cooldown", arena.getItemCooldownSeconds()
+        ));
     }
 
     public void broadcastArenaJoiningChanged(Player player, Arena arena) {
-        Bukkit.broadcastMessage("§6§lPILLARS §8» §e" + arena.getDisplayName()
-                + (arena.isJoiningOpen() ? " §awas opened for joining" : " §cwas closed for joining")
-                + " §7by §f" + player.getName() + "§7.");
+        String key = arena.isJoiningOpen()
+                ? "messages.arena-joining-opened"
+                : "messages.arena-joining-closed";
+        Bukkit.broadcastMessage(translations.text(
+                key,
+                "arena", arena.getDisplayName(),
+                "player", player.getName()
+        ));
     }
 
     public void sendArenaSpectateUnavailable(Player player) {
-        player.sendMessage("§cYou can only spectate arenas while a game is in progress.");
+        player.sendMessage(translations.text("messages.spectate-unavailable"));
     }
 
     public void sendCannotSpectateOwnGame(Player player) {
-        player.sendMessage("§cYou cannot use admin spectate while playing in that arena.");
+        player.sendMessage(translations.text("messages.cannot-spectate-own-game"));
     }
 
     public void sendAdminSpectatorJoined(Player player, String arenaName) {
-        player.sendMessage("§6§lPILLARS §8» §aNow spectating §e" + arenaName + "§a. Use §f/p leave §ato return.");
+        player.sendMessage(translations.text("messages.spectator-joined", "arena", arenaName));
     }
 
     public void sendNoSpawnAvailable(Player player) {
-        player.sendMessage("§cThere are no available spawn points in this arena.");
+        player.sendMessage(translations.text("messages.no-spawn-available"));
     }
 
     public void sendArenaConfigurationError(Player player) {
-        player.sendMessage("§cThe arena is configured incorrectly. Please contact an administrator.");
+        player.sendMessage(translations.text("messages.arena-configuration-error"));
     }
 
     public void sendLobbyWorldMissing(Player player, String worldName) {
-        player.sendMessage("§cLobby world '" + worldName + "' was not found.");
+        player.sendMessage(translations.text("messages.lobby-world-missing", "world", worldName));
     }
 
     public void sendWitherCountdownTitle(Player player, int secondsLeft) {
-        player.sendTitle("§c§lFINAL ZONE", "§7Poison starts in §e§l" + secondsLeft + " §7sec.", FADE_IN, MEDIUM_STAY, FADE_OUT);
+        player.sendTitle(
+                translations.text("titles.final-zone.title"),
+                translations.text("titles.final-zone.subtitle", "seconds", secondsLeft),
+                FADE_IN,
+                MEDIUM_STAY,
+                FADE_OUT
+        );
     }
 
     public void sendWitherStartTitle(Player player) {
-        player.sendTitle("§5§lWARNING!", "§cThe Wither phase has started!", FADE_IN, LONG_STAY, FADE_OUT);
+        player.sendTitle(
+                translations.text("titles.wither-start.title"),
+                translations.text("titles.wither-start.subtitle"),
+                FADE_IN,
+                LONG_STAY,
+                FADE_OUT
+        );
     }
 
     private String formatState(GameState state) {
         if (state == null) {
-            return "§7Unknown";
+            return translations.text("scoreboard.state.unknown");
         }
 
         return switch (state) {
-            case WAITING -> "§eWaiting for players";
-            case STARTING, COUNTDOWN -> "§6Starting";
-            case RUNNING -> "§aIn progress";
-            case ENDING -> "§cEnding";
-            case RESETTING -> "§7Resetting";
+            case WAITING -> translations.text("scoreboard.state.waiting");
+            case STARTING, COUNTDOWN -> translations.text("scoreboard.state.starting");
+            case RUNNING -> translations.text("scoreboard.state.running");
+            case ENDING -> translations.text("scoreboard.state.ending");
+            case RESETTING -> translations.text("scoreboard.state.resetting");
         };
     }
 }

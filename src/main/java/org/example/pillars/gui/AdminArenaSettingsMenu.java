@@ -15,6 +15,7 @@ import org.example.pillars.managers.ArenaManager;
 import org.example.pillars.managers.GameSessionManager;
 import org.example.pillars.managers.HudManager;
 import org.example.pillars.managers.ItemManager;
+import org.example.pillars.managers.TranslationManager;
 
 import java.util.List;
 
@@ -29,6 +30,7 @@ public class AdminArenaSettingsMenu implements InventoryHolder {
     private final ItemManager itemManager;
     private final HudManager hudManager;
     private final Arena arena;
+    private final TranslationManager translations;
 
     public AdminArenaSettingsMenu(Player player, ArenaManager arenaManager, GameSessionManager gameSessionManager, ItemManager itemManager, HudManager hudManager, Arena arena) {
         this.player = player;
@@ -37,7 +39,12 @@ public class AdminArenaSettingsMenu implements InventoryHolder {
         this.itemManager = itemManager;
         this.hudManager = hudManager;
         this.arena = arena;
-        this.inventory = Bukkit.createInventory(this, MENU_SIZE, "§4Arena: §f" + arena.getDisplayName());
+        this.translations = hudManager.getTranslations();
+        this.inventory = Bukkit.createInventory(
+                this,
+                MENU_SIZE,
+                translations.text("menus.arena-settings.title", "arena", arena.getDisplayName())
+        );
         buildMenu();
     }
 
@@ -46,39 +53,60 @@ public class AdminArenaSettingsMenu implements InventoryHolder {
             inventory.setItem(i, filler());
         }
 
-        inventory.setItem(0, actionItem(Material.ARROW, "§eBack", List.of("§7Return to arena list."), "back"));
+        inventory.setItem(0, actionItem(
+                Material.ARROW,
+                translations.text("menus.common.back"),
+                List.of(translations.text("menus.arena-settings.back-lore")),
+                "back"
+        ));
         inventory.setItem(4, infoItem());
         inventory.setItem(8, actionItem(
                 arena.isJoiningOpen() ? Material.OAK_DOOR : Material.IRON_DOOR,
-                arena.isJoiningOpen() ? "§cClose Joining" : "§aOpen Joining",
-                List.of("§7Runtime testing control.", "§7Existing players stay in the arena."),
+                translations.text(arena.isJoiningOpen()
+                        ? "menus.arena-settings.close-joining"
+                        : "menus.arena-settings.open-joining"),
+                translations.list("menus.arena-settings.joining-lore"),
                 "toggle_joining"
         ));
 
-        inventory.setItem(9, actionItem(Material.RED_DYE, "§cPlayers to Start -1", List.of(
-                "§7Minimum is 1.",
-                "§7Countdown starts at this player count."
+        inventory.setItem(9, actionItem(Material.RED_DYE, translations.text("menus.arena-settings.players-start-decrease"), List.of(
+                translations.text("menus.arena-settings.minimum-one"),
+                translations.text("menus.arena-settings.starts-at-lore")
         ), "min:-1"));
         inventory.setItem(10, displayItem(
                 Material.PLAYER_HEAD,
-                "§bPlayers to Start",
+                translations.text("menus.arena-settings.players-to-start"),
                 arena.getMinPlayers() + "/" + arena.getSpawnPoints().size(),
-                "§7Countdown starts at this player count.",
-                "§7If players leave below it, countdown stops."
+                translations.text("menus.arena-settings.starts-at-lore"),
+                translations.text("menus.arena-settings.leaves-stop-countdown")
         ));
-        inventory.setItem(11, actionItem(Material.LIME_DYE, "§aPlayers to Start +1", List.of(
-                "§7Maximum is arena capacity.",
-                "§7Countdown starts at this player count."
+        inventory.setItem(11, actionItem(Material.LIME_DYE, translations.text("menus.arena-settings.players-start-increase"), List.of(
+                translations.text("menus.arena-settings.maximum-capacity"),
+                translations.text("menus.arena-settings.starts-at-lore")
         ), "min:1"));
 
-        inventory.setItem(15, actionItem(Material.REDSTONE, "§cCooldown -1s", List.of("§7Minimum is 1 second."), "cooldown:-1"));
-        inventory.setItem(16, displayItem(Material.CLOCK, "§eItem Cooldown", arena.getItemCooldownSeconds() + "s"));
-        inventory.setItem(17, actionItem(Material.GLOWSTONE_DUST, "§aCooldown +1s", List.of("§7Increases item delivery interval."), "cooldown:1"));
+        inventory.setItem(15, actionItem(
+                Material.REDSTONE,
+                translations.text("menus.arena-settings.cooldown-decrease"),
+                List.of(translations.text("menus.arena-settings.cooldown-minimum")),
+                "cooldown:-1"
+        ));
+        inventory.setItem(16, displayItem(
+                Material.CLOCK,
+                translations.text("menus.arena-settings.item-cooldown"),
+                arena.getItemCooldownSeconds() + translations.text("units.second-short")
+        ));
+        inventory.setItem(17, actionItem(
+                Material.GLOWSTONE_DUST,
+                translations.text("menus.arena-settings.cooldown-increase"),
+                List.of(translations.text("menus.arena-settings.cooldown-increase-lore")),
+                "cooldown:1"
+        ));
 
         inventory.setItem(22, actionItem(
                 Material.SPYGLASS,
-                "§bSpectate Arena",
-                List.of("§7Only works while the game is running.", "§7Does not add you as a player."),
+                translations.text("menus.arena-settings.spectate"),
+                translations.list("menus.arena-settings.spectate-lore"),
                 "spectate"
         ));
     }
@@ -97,11 +125,8 @@ public class AdminArenaSettingsMenu implements InventoryHolder {
         ItemStack item = new ItemStack(Material.WRITABLE_BOOK);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName("§6§lSafe Arena Settings");
-            meta.setLore(List.of(
-                    "§7Changes save to config.yml immediately.",
-                    "§7Only safe numeric settings are editable here."
-            ));
+            meta.setDisplayName(translations.text("menus.arena-settings.info-name"));
+            meta.setLore(translations.list("menus.arena-settings.info-lore"));
             item.setItemMeta(meta);
         }
         return item;
@@ -112,7 +137,9 @@ public class AdminArenaSettingsMenu implements InventoryHolder {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(name + " §f" + value);
-            meta.setLore(lore.length == 0 ? List.of("§7Current value") : List.of(lore));
+            meta.setLore(lore.length == 0
+                    ? List.of(translations.text("menus.common.current-value"))
+                    : List.of(lore));
             item.setItemMeta(meta);
         }
         return item;

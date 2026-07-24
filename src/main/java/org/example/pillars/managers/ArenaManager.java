@@ -15,13 +15,15 @@ import java.util.*;
 public class ArenaManager {
 
     private final PillarsPlugin plugin;
+    private final TranslationManager translations;
     private final Map<String, Arena> arenas = new HashMap<>();
 
     private final File worldContainer = Bukkit.getWorldContainer();
     private final File templateWorld = new File(worldContainer, "arena_template");
 
-    public ArenaManager(PillarsPlugin plugin) {
+    public ArenaManager(PillarsPlugin plugin, TranslationManager translations) {
         this.plugin = plugin;
+        this.translations = translations;
         loadArenas();
     }
 
@@ -34,12 +36,15 @@ public class ArenaManager {
 
         File configFile = new File(plugin.getDataFolder(), "config.yml");
         if (!configFile.exists()) {
-            plugin.getLogger().severe("config.yml not found. No arenas loaded.");
+            plugin.getLogger().severe(translations.text("logs.config-missing"));
             return;
         }
 
         if (!templateWorld.exists() || !templateWorld.isDirectory()) {
-            plugin.getLogger().severe("Arena template world not found: " + templateWorld.getAbsolutePath());
+            plugin.getLogger().severe(translations.text(
+                    "logs.template-world-missing",
+                    "path", templateWorld.getAbsolutePath()
+            ));
             return;
         }
 
@@ -63,9 +68,13 @@ public class ArenaManager {
                     new File(arenaFolder, "uid.dat").delete();
                     new File(arenaFolder, "session.lock").delete();
 
-                    plugin.getLogger().info("Created arena world: " + worldName);
+                    plugin.getLogger().info(translations.text("logs.arena-world-created", "world", worldName));
                 } catch (IOException | RuntimeException e) {
-                    plugin.getLogger().severe("Failed to copy arena template for " + worldName + ": " + e.getMessage());
+                    plugin.getLogger().severe(translations.text(
+                            "logs.arena-template-copy-failed",
+                            "world", worldName,
+                            "error", e.getMessage()
+                    ));
                     continue;
                 }
             }
@@ -78,7 +87,7 @@ public class ArenaManager {
             }
 
             if (world == null) {
-                plugin.getLogger().severe("Failed to load world " + worldName);
+                plugin.getLogger().severe(translations.text("logs.world-load-failed", "world", worldName));
                 continue;
             }
 
@@ -91,7 +100,7 @@ public class ArenaManager {
             Arena arena = new Arena();
             arena.setConfigKey(key);
             arena.setWorldName(worldName);
-            arena.setDisplayName(sec.getString("displayName", worldName));
+            arena.setDisplayName(getLocalizedDisplayName(sec, worldName));
             arena.setJoiningOpen(sec.getBoolean("joiningOpen", true));
             arena.setItemCooldownSeconds(sec.getInt("itemCooldownSeconds", 0));
 
@@ -109,7 +118,7 @@ public class ArenaManager {
             }
 
             if (spawns.isEmpty()) {
-                plugin.getLogger().severe("Arena " + worldName + " has no valid spawn points. Skipping.");
+                plugin.getLogger().severe(translations.text("logs.arena-no-spawns", "world", worldName));
                 continue;
             }
 
@@ -119,7 +128,7 @@ public class ArenaManager {
             arenas.put(worldName, arena);
         }
 
-        plugin.getLogger().info("Loaded " + arenas.size() + " arenas.");
+        plugin.getLogger().info(translations.text("logs.arenas-loaded", "count", arenas.size()));
     }
 
     public void resetArena(Arena arena, Runnable callback) {
@@ -127,7 +136,11 @@ public class ArenaManager {
         World world = Bukkit.getWorld(worldName);
 
         if (!templateWorld.exists() || !templateWorld.isDirectory()) {
-            plugin.getLogger().severe("Cannot reset arena " + worldName + "; template world missing: " + templateWorld.getAbsolutePath());
+            plugin.getLogger().severe(translations.text(
+                    "logs.arena-reset-template-missing",
+                    "world", worldName,
+                    "path", templateWorld.getAbsolutePath()
+            ));
             runResetCallback(callback);
             return;
         }
@@ -150,7 +163,11 @@ public class ArenaManager {
                 new File(arenaFolder, "session.lock").delete();
 
             } catch (IOException | RuntimeException e) {
-                plugin.getLogger().severe("Failed to reset arena world " + worldName + ": " + e.getMessage());
+                plugin.getLogger().severe(translations.text(
+                        "logs.arena-reset-failed",
+                        "world", worldName,
+                        "error", e.getMessage()
+                ));
                 runResetCallback(callback);
                 return;
             }
@@ -175,13 +192,13 @@ public class ArenaManager {
 
                     arenas.put(worldName, arena);
 
-                    plugin.getLogger().info("Arena async reset completed " + worldName);
+                    plugin.getLogger().info(translations.text("logs.arena-reset-completed", "world", worldName));
 
                     if (callback != null) {
                         callback.run();
                     }
                 } else {
-                    plugin.getLogger().severe("Failed to load world " + worldName);
+                    plugin.getLogger().severe(translations.text("logs.world-load-failed", "world", worldName));
                     if (callback != null) {
                         callback.run();
                     }
@@ -243,7 +260,10 @@ public class ArenaManager {
 
         String configKey = getConfigKey(arena);
         if (configKey == null) {
-            plugin.getLogger().warning("Could not save arena settings for " + arena.getWorldName() + "; config key not found.");
+            plugin.getLogger().warning(translations.text(
+                    "logs.arena-settings-key-missing",
+                    "world", arena.getWorldName()
+            ));
             return;
         }
 
@@ -261,7 +281,10 @@ public class ArenaManager {
 
         String configKey = getConfigKey(arena);
         if (configKey == null) {
-            plugin.getLogger().warning("Could not save joining state for " + arena.getWorldName() + "; config key not found.");
+            plugin.getLogger().warning(translations.text(
+                    "logs.arena-joining-key-missing",
+                    "world", arena.getWorldName()
+            ));
             return;
         }
 
@@ -295,5 +318,15 @@ public class ArenaManager {
                 .findFirst().orElse(null);
     }
 
+    private String getLocalizedDisplayName(ConfigurationSection section, String worldName) {
+        String localizedName = section.getString("displayName." + translations.getLanguage());
+        if (localizedName == null || localizedName.isBlank()) {
+            localizedName = section.getString("displayName.en");
+        }
+        if (localizedName == null || localizedName.isBlank()) {
+            localizedName = section.getString("displayName", worldName);
+        }
+        return localizedName;
+    }
 
 }

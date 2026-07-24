@@ -14,20 +14,20 @@ import org.example.pillars.managers.ArenaManager;
 import org.example.pillars.managers.GameSessionManager;
 import org.example.pillars.managers.HudManager;
 import org.example.pillars.managers.ItemManager;
+import org.example.pillars.managers.TranslationManager;
 
 import java.util.List;
 
 public class AdminHubMenu implements InventoryHolder {
     private static final NamespacedKey ACTION_KEY = new NamespacedKey("pillars", "admin_hub_action");
     private static final int MENU_SIZE = 27;
-    private static final String MENU_TITLE = "§4Pillars Admin";
-
     private final Inventory inventory;
     private final Player player;
     private final ItemManager itemManager;
     private final HudManager hudManager;
     private final ArenaManager arenaManager;
     private final GameSessionManager gameSessionManager;
+    private final TranslationManager translations;
 
     public AdminHubMenu(Player player, ItemManager itemManager, HudManager hudManager, ArenaManager arenaManager, GameSessionManager gameSessionManager) {
         this.player = player;
@@ -35,7 +35,8 @@ public class AdminHubMenu implements InventoryHolder {
         this.hudManager = hudManager;
         this.arenaManager = arenaManager;
         this.gameSessionManager = gameSessionManager;
-        this.inventory = Bukkit.createInventory(this, MENU_SIZE, MENU_TITLE);
+        this.translations = hudManager.getTranslations();
+        this.inventory = Bukkit.createInventory(this, MENU_SIZE, translations.text("menus.admin-hub.title"));
         buildMenu();
     }
 
@@ -46,32 +47,32 @@ public class AdminHubMenu implements InventoryHolder {
 
         inventory.setItem(4, actionItem(
                 Material.MAP,
-                "§eArena Settings",
-                List.of("§7Edit safe numeric arena settings."),
+                translations.text("menus.admin-hub.arena-settings"),
+                List.of(translations.text("menus.admin-hub.arena-settings-lore")),
                 "arenas"
         ));
         inventory.setItem(10, actionItem(
                 Material.COMPARATOR,
-                "§6Rarity Chances",
-                List.of("§7Adjust common, rare, and legendary drop rates."),
+                translations.text("menus.admin-hub.rarity-chances"),
+                List.of(translations.text("menus.admin-hub.rarity-chances-lore")),
                 "rarity"
         ));
         inventory.setItem(12, actionItem(
                 Material.CHEST,
-                "§aCommon Items",
-                List.of("§7Add or remove common pool items."),
+                translations.text("menus.admin-hub.common-items"),
+                List.of(translations.text("menus.admin-hub.common-items-lore")),
                 "pool:common"
         ));
         inventory.setItem(14, actionItem(
                 Material.ENDER_CHEST,
-                "§bRare Items",
-                List.of("§7Add or remove rare pool items."),
+                translations.text("menus.admin-hub.rare-items"),
+                List.of(translations.text("menus.admin-hub.rare-items-lore")),
                 "pool:rare"
         ));
         inventory.setItem(16, actionItem(
                 Material.NETHERITE_BLOCK,
-                "§6Legendary Items",
-                List.of("§7Add or remove legendary pool items."),
+                translations.text("menus.admin-hub.legendary-items"),
+                List.of(translations.text("menus.admin-hub.legendary-items-lore")),
                 "pool:legendary"
         ));
     }

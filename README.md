@@ -56,16 +56,28 @@ plugins/PillarsPlugin/config.yml
 
 Most gameplay values can be configured in `config.yml`, including countdowns, arena reset timing, border shrinking, item rarity, lobby world, arena worlds, spawn points, per-arena start thresholds, display names, and item cooldowns.
 
+Set the server-wide player-facing language at the top of `config.yml`:
+
+```yaml
+language: en # en | ru
+```
+
+Use `en` for English or `ru` for Russian, then restart the server. If the value is missing or unsupported, the plugin falls back to English. On first startup, editable copies of `messages_en.yml` and `messages_ru.yml` are created in `plugins/PillarsPlugin/`.
+
 ### Main Settings
 
 ```yaml
+language: en
+
 settings:
   beginCountdownSeconds: 5
   endGameLobbyCountdownSeconds: 5
   endGameSpectatorDelayTicks: 40
   arenaResetDelayTicks: 160
-  borderShrinkSeconds: 300
+  borderShrinkSeconds: 360
   borderMinSize: 1
+  borderSpawnPaddingBlocks: 10
+  spawnPillarHeightBlocks: 5
   lobbyWorldName: "world"
   witherCountdownSeconds: 5
   witherEffectDurationTicks: 40
@@ -79,12 +91,15 @@ settings:
 
 | Setting | Description |
 | --- | --- |
+| `language` | Player-facing language. Supported values: `en` and `ru`. |
 | `beginCountdownSeconds` | Countdown duration before a game begins. |
 | `endGameLobbyCountdownSeconds` | Countdown before players are sent back to the lobby after a game. |
 | `endGameSpectatorDelayTicks` | Delay before end-game spectator handling, in ticks. 20 ticks is about 1 second. |
 | `arenaResetDelayTicks` | Delay before the arena is reset, in ticks. |
-| `borderShrinkSeconds` | Time before or during world border shrinking, in seconds. |
-| `borderMinSize` | Minimum final border size. |
+| `borderShrinkSeconds` | Time the border takes to shrink from its initial size to its final size, in seconds. |
+| `borderMinSize` | Final border width in blocks. Minecraft border sizes are full widths, not radii. |
+| `borderSpawnPaddingBlocks` | Minimum initial build room between every player spawn and its nearest border edge. |
+| `spawnPillarHeightBlocks` | Height of each 1×1 bedrock spawn pillar. Clamped between 1 and 64 blocks. |
 | `lobbyWorldName` | World name used as the lobby destination. |
 | `witherCountdownSeconds` | Countdown related to the wither effect phase. |
 | `witherEffectDurationTicks` | Wither effect duration, in ticks. |
@@ -109,7 +124,9 @@ arenas:
       - [-6, 100, 6]
       - [6, 100, -6]
       - [6, 100, 6]
-    displayName: "Arena 4 #1"
+    displayName:
+      en: "Arena 4 #1"
+      ru: "Арена 4 №1"
     joiningOpen: true
     minPlayers: 2
     itemCooldownSeconds: 5
@@ -119,7 +136,7 @@ arenas:
 | --- | --- |
 | `worldName` | Name of the world used for this arena. |
 | `spawnPoints` | Player spawn locations in `[x, y, z]` format. The number of spawn points controls the arena capacity. |
-| `displayName` | Name shown to players in menus and messages. |
+| `displayName` | Per-language name shown in menus and messages. Existing configs with one string value remain supported. |
 | `joiningOpen` | Whether players can join this arena. Admins can toggle this safely from `/p admin`. |
 | `minPlayers` | Minimum players needed for this arena to start automatically. If missing, it defaults to half of the arena capacity. |
 | `itemCooldownSeconds` | Cooldown between item grants or item usage for that arena. |
@@ -133,6 +150,14 @@ The default config includes:
 | 12-player arenas | `arena12_1`, `arena12_2`, `arena12_3` | 12 |
 
 When adding a new arena, make sure the world exists on the server and that every spawn point is valid for that world.
+
+The initial border is centered on the configured spawn points and sized automatically. With the default
+`borderSpawnPaddingBlocks: 10`, every spawn starts at least 10 blocks from the nearest border edge,
+regardless of whether it is on a side or diagonal of the arena.
+
+Each configured spawn point is the top block of a bedrock pillar. The default height of 5 creates blocks
+from the configured Y coordinate down through the four blocks below it, while the player still appears
+one block above the configured spawn.
 
 ## Item Pools
 
@@ -299,5 +324,7 @@ src/main/java/org/example/pillars
 src/main/resources
   config.yml     Default plugin configuration
   item-pools.yml Default common, rare, and legendary item pools
+  messages_en.yml English player-facing text
+  messages_ru.yml Russian player-facing text
   plugin.yml     Plugin metadata, commands, aliases, and permissions
 ```

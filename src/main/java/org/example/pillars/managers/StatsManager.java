@@ -15,12 +15,14 @@ import java.util.UUID;
 public class StatsManager {
 
     private final JavaPlugin plugin;
+    private final TranslationManager translations;
     private final File statsFile;
     private final Gson gson;
     private Map<UUID, PlayerStats> statsMap;
 
-    public StatsManager(JavaPlugin plugin) {
+    public StatsManager(JavaPlugin plugin, TranslationManager translations) {
         this.plugin = plugin;
+        this.translations = translations;
         this.gson = new Gson();
         this.statsFile = new File(plugin.getDataFolder(), "stats.json");
         loadStats();
@@ -41,7 +43,10 @@ public class StatsManager {
 
             if (statsMap == null) statsMap = new HashMap<>();
         } catch (Exception e) {
-            plugin.getLogger().severe("Failed to load stats.json: " + e.getMessage());
+            plugin.getLogger().severe(translations.text(
+                    "logs.stats-load-failed",
+                    "error", e.getMessage()
+            ));
             statsMap = new HashMap<>();
         }
     }
@@ -54,7 +59,10 @@ public class StatsManager {
                 gson.toJson(statsMap, writer);
             }
         } catch (Exception e) {
-            plugin.getLogger().severe("Failed to save stats.json: " + e.getMessage());
+            plugin.getLogger().severe(translations.text(
+                    "logs.stats-save-failed",
+                    "error", e.getMessage()
+            ));
         }
     }
 

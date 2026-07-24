@@ -14,6 +14,7 @@ import org.example.pillars.managers.ArenaManager;
 import org.example.pillars.managers.GameSessionManager;
 import org.example.pillars.managers.HudManager;
 import org.example.pillars.managers.ItemManager;
+import org.example.pillars.managers.TranslationManager;
 
 import java.util.Comparator;
 import java.util.List;
@@ -32,6 +33,7 @@ public class AdminItemPoolMenu implements InventoryHolder {
     private final HudManager hudManager;
     private final String rarity;
     private final int page;
+    private final TranslationManager translations;
 
     public AdminItemPoolMenu(Player player, ArenaManager arenaManager, GameSessionManager gameSessionManager, ItemManager itemManager, HudManager hudManager, String rarity) {
         this(player, arenaManager, gameSessionManager, itemManager, hudManager, rarity, 0);
@@ -45,7 +47,12 @@ public class AdminItemPoolMenu implements InventoryHolder {
         this.hudManager = hudManager;
         this.rarity = rarity.toLowerCase();
         this.page = Math.max(0, page);
-        this.inventory = Bukkit.createInventory(this, MENU_SIZE, "§4Items: §f" + this.rarity);
+        this.translations = hudManager.getTranslations();
+        this.inventory = Bukkit.createInventory(
+                this,
+                MENU_SIZE,
+                translations.text("menus.item-pool.title", "rarity", localizedRarity())
+        );
         buildMenu();
     }
 
@@ -54,12 +61,19 @@ public class AdminItemPoolMenu implements InventoryHolder {
             inventory.setItem(i, filler());
         }
 
-        inventory.setItem(0, actionItem(Material.ARROW, "§eBack", List.of("§7Return to admin menu."), "back"));
+        inventory.setItem(0, actionItem(
+                Material.ARROW,
+                translations.text("menus.common.back"),
+                List.of(translations.text("menus.common.back-admin-lore")),
+                "back"
+        ));
         inventory.setItem(4, infoItem());
-        inventory.setItem(8, actionItem(Material.LIME_DYE, "§aAdd Held Item", List.of(
-                "§7Adds your main-hand item",
-                "§7using the default weight for this rarity."
-        ), "add_held"));
+        inventory.setItem(8, actionItem(
+                Material.LIME_DYE,
+                translations.text("menus.item-pool.add-held"),
+                translations.list("menus.item-pool.add-held-lore"),
+                "add_held"
+        ));
 
         List<Map.Entry<Material, Integer>> entries = itemManager.getItemPool(rarity).entrySet().stream()
                 .sorted(Comparator.comparing(e -> e.getKey().name()))
@@ -76,13 +90,31 @@ public class AdminItemPoolMenu implements InventoryHolder {
         }
 
         if (currentPage > 0) {
-            inventory.setItem(45, actionItem(Material.ARROW, "§ePrevious Page", List.of("§7Page " + currentPage + " of " + (maxPage + 1)), "page:" + (currentPage - 1)));
+            inventory.setItem(45, actionItem(
+                    Material.ARROW,
+                    translations.text("menus.item-pool.previous-page"),
+                    List.of(translations.text(
+                            "menus.item-pool.page-of",
+                            "current", currentPage,
+                            "total", maxPage + 1
+                    )),
+                    "page:" + (currentPage - 1)
+            ));
         }
 
         inventory.setItem(49, pageItem(currentPage, maxPage));
 
         if (currentPage < maxPage) {
-            inventory.setItem(53, actionItem(Material.ARROW, "§eNext Page", List.of("§7Page " + (currentPage + 2) + " of " + (maxPage + 1)), "page:" + (currentPage + 1)));
+            inventory.setItem(53, actionItem(
+                    Material.ARROW,
+                    translations.text("menus.item-pool.next-page"),
+                    List.of(translations.text(
+                            "menus.item-pool.page-of",
+                            "current", currentPage + 2,
+                            "total", maxPage + 1
+                    )),
+                    "page:" + (currentPage + 1)
+            ));
         }
     }
 
@@ -100,11 +132,8 @@ public class AdminItemPoolMenu implements InventoryHolder {
         ItemStack item = new ItemStack(Material.BOOK);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName("§6§l" + capitalize(rarity) + " Pool");
-            meta.setLore(List.of(
-                    "§7Click an item to disable it.",
-                    "§7Use Add Held Item to add or re-enable."
-            ));
+            meta.setDisplayName(translations.text("menus.item-pool.info-name", "rarity", localizedRarity()));
+            meta.setLore(translations.list("menus.item-pool.info-lore"));
             item.setItemMeta(meta);
         }
         return item;
@@ -116,8 +145,8 @@ public class AdminItemPoolMenu implements InventoryHolder {
         if (meta != null) {
             meta.setDisplayName("§f" + material.name());
             meta.setLore(List.of(
-                    "§7Weight: §f" + weight,
-                    "§cClick to disable"
+                    translations.text("menus.item-pool.weight", "weight", weight),
+                    translations.text("menus.item-pool.disable")
             ));
             meta.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "remove");
             meta.getPersistentDataContainer().set(MATERIAL_KEY, PersistentDataType.STRING, material.name());
@@ -142,8 +171,17 @@ public class AdminItemPoolMenu implements InventoryHolder {
         ItemStack item = new ItemStack(Material.PAPER);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName("§fPage " + (currentPage + 1) + "§7/§f" + (maxPage + 1));
-            meta.setLore(List.of("§7" + itemManager.getItemPool(rarity).size() + " enabled items"));
+            int itemCount = itemManager.getItemPool(rarity).size();
+            meta.setDisplayName(translations.text(
+                    "menus.item-pool.page",
+                    "current", currentPage + 1,
+                    "total", maxPage + 1
+            ));
+            meta.setLore(List.of(translations.text(
+                    "menus.item-pool.enabled-count",
+                    "count", itemCount,
+                    "items", translations.plural("units.enabled-item", itemCount)
+            )));
             item.setItemMeta(meta);
         }
         return item;
@@ -216,12 +254,8 @@ public class AdminItemPoolMenu implements InventoryHolder {
         }
     }
 
-    private String capitalize(String value) {
-        if (value == null || value.isEmpty()) {
-            return "";
-        }
-
-        return value.substring(0, 1).toUpperCase() + value.substring(1);
+    private String localizedRarity() {
+        return translations.text("rarities." + rarity);
     }
 
     @Override

@@ -15,6 +15,7 @@ import org.example.pillars.managers.ArenaManager;
 import org.example.pillars.managers.GameSessionManager;
 import org.example.pillars.managers.HudManager;
 import org.example.pillars.managers.ItemManager;
+import org.example.pillars.managers.TranslationManager;
 
 import java.util.List;
 
@@ -22,14 +23,13 @@ public class AdminArenaListMenu implements InventoryHolder {
     private static final NamespacedKey ACTION_KEY = new NamespacedKey("pillars", "admin_arena_action");
     private static final NamespacedKey ARENA_KEY = new NamespacedKey("pillars", "admin_arena_world");
     private static final int MENU_SIZE = 54;
-    private static final String MENU_TITLE = "§4Arena Settings";
-
     private final Inventory inventory;
     private final Player player;
     private final ArenaManager arenaManager;
     private final GameSessionManager gameSessionManager;
     private final ItemManager itemManager;
     private final HudManager hudManager;
+    private final TranslationManager translations;
 
     public AdminArenaListMenu(Player player, ArenaManager arenaManager, GameSessionManager gameSessionManager, ItemManager itemManager, HudManager hudManager) {
         this.player = player;
@@ -37,41 +37,45 @@ public class AdminArenaListMenu implements InventoryHolder {
         this.gameSessionManager = gameSessionManager;
         this.itemManager = itemManager;
         this.hudManager = hudManager;
-        this.inventory = Bukkit.createInventory(this, MENU_SIZE, MENU_TITLE);
+        this.translations = hudManager.getTranslations();
+        this.inventory = Bukkit.createInventory(this, MENU_SIZE, translations.text("menus.arena-list.title"));
         buildMenu();
     }
 
     private void buildMenu() {
-        for (int i = 0; i < MENU_SIZE; i++) {
-            inventory.setItem(i, filler());
-        }
+        ArenaMenuItemFactory.fill(inventory, Material.BLACK_STAINED_GLASS_PANE);
 
-        inventory.setItem(0, actionItem(Material.ARROW, "§eBack", List.of("§7Return to admin menu."), "back"));
-
-        int slot = 9;
-        for (Arena arena : arenaManager.getArenas().stream()
+        List<Arena> arenas = arenaManager.getArenas().stream()
                 .sorted(ArenaMenuItemFactory.arenaListOrder())
-                .toList()) {
-            if (slot >= MENU_SIZE) {
-                break;
-            }
-            inventory.setItem(slot++, ArenaMenuItemFactory.adminArenaItem(
-                    arena,
-                    gameSessionManager.getSession(arena),
-                    ACTION_KEY,
-                    ARENA_KEY
-            ));
-        }
-    }
+                .toList();
 
-    private ItemStack filler() {
-        ItemStack item = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(" ");
-            item.setItemMeta(meta);
+        if (arenas.isEmpty()) {
+            inventory.setItem(22, ArenaMenuItemFactory.visualItem(
+                    Material.BARRIER,
+                    translations.text("messages.arena-not-found"),
+                    List.of()
+            ));
+        } else {
+            ArenaMenuItemFactory.placeTriangleArenaItems(
+                    inventory,
+                    arenas,
+                    arena -> ArenaMenuItemFactory.adminArenaItem(
+                            arena,
+                            gameSessionManager.getSession(arena),
+                            ACTION_KEY,
+                            ARENA_KEY,
+                            translations
+                    ),
+                    translations
+            );
         }
-        return item;
+
+        inventory.setItem(45, actionItem(
+                Material.ARROW,
+                translations.text("menus.common.back"),
+                List.of(translations.text("menus.common.back-admin-lore")),
+                "back"
+        ));
     }
 
     private ItemStack actionItem(Material material, String name, List<String> lore, String action) {
