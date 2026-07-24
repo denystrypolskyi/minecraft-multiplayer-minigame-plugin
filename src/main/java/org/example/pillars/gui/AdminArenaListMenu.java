@@ -56,7 +56,7 @@ public class AdminArenaListMenu implements InventoryHolder {
                     List.of()
             ));
         } else {
-            ArenaMenuItemFactory.placeTriangleArenaItems(
+            ArenaMenuItemFactory.placeVerticalArenaItems(
                     inventory,
                     arenas,
                     arena -> ArenaMenuItemFactory.adminArenaItem(

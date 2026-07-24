@@ -23,28 +23,27 @@ final class ArenaMenuItemFactory {
                     "§a",
                     Material.LIME_STAINED_GLASS_PANE,
                     1,
-                    new int[]{0, 2, 9, 11, 19},
-                    new int[]{10, 18, 20}
+                    new int[]{0, 2, 9, 11, 18, 20, 27, 29, 36, 37, 38},
+                    new int[]{10, 19, 28}
             ),
             new ArenaGroupLayout(
                     8,
                     "§b",
                     Material.LIGHT_BLUE_STAINED_GLASS_PANE,
                     4,
-                    new int[]{3, 5, 12, 14, 22},
-                    new int[]{13, 21, 23}
+                    new int[]{3, 5, 12, 14, 21, 23, 30, 32, 39, 40, 41},
+                    new int[]{13, 22, 31}
             ),
             new ArenaGroupLayout(
                     12,
                     "§d",
                     Material.PURPLE_STAINED_GLASS_PANE,
                     7,
-                    new int[]{6, 8, 15, 17, 25},
-                    new int[]{16, 24, 26}
+                    new int[]{6, 8, 15, 17, 24, 26, 33, 35, 42, 43, 44},
+                    new int[]{16, 25, 34}
             )
     };
-    private static final int[] DIVIDER_SLOTS = {27, 28, 29, 30, 31, 32, 33, 34, 35};
-    private static final int[] OVERFLOW_SLOTS = {37, 38, 39, 40, 41, 42, 43, 46, 47, 48, 49, 50, 51, 52};
+    private static final int[] OVERFLOW_SLOTS = {46, 47, 48, 49, 50, 51, 52, 53};
 
     private ArenaMenuItemFactory() {
     }
@@ -79,7 +78,7 @@ final class ArenaMenuItemFactory {
         return item;
     }
 
-    static void placeTriangleArenaItems(
+    static void placeVerticalArenaItems(
             Inventory inventory,
             List<Arena> arenas,
             Function<Arena, ItemStack> itemFactory,
@@ -97,7 +96,6 @@ final class ArenaMenuItemFactory {
             overflow.addAll(placeIntoSlots(inventory, groupArenas, itemFactory, group.arenaSlots()));
         }
 
-        placeDivider(inventory);
         placeIntoSlots(inventory, overflow, itemFactory, OVERFLOW_SLOTS);
     }
 
@@ -225,13 +223,6 @@ final class ArenaMenuItemFactory {
     private static void placeAccentPanes(Inventory inventory, ArenaGroupLayout group) {
         ItemStack pane = blankItem(group.paneMaterial());
         for (int slot : group.accentSlots()) {
-            inventory.setItem(slot, pane);
-        }
-    }
-
-    private static void placeDivider(Inventory inventory) {
-        ItemStack pane = blankItem(Material.GRAY_STAINED_GLASS_PANE);
-        for (int slot : DIVIDER_SLOTS) {
             inventory.setItem(slot, pane);
         }
     }

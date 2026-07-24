@@ -55,7 +55,7 @@ public class ArenaMenu implements InventoryHolder {
             return;
         }
 
-        ArenaMenuItemFactory.placeTriangleArenaItems(
+        ArenaMenuItemFactory.placeVerticalArenaItems(
                 inventory,
                 arenas,
                 arena -> ArenaMenuItemFactory.playerArenaItem(
